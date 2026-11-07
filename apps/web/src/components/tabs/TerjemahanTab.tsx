@@ -49,23 +49,6 @@ export const TerjemahanTab: React.FC = () => {
   const currentPlayingVerseRef = useRef<string | null>(null);
   const isInitializingRef = useRef<boolean>(false);
 
-  // Quick Jump Input state (e.g., "8:2")
-  const [quickSearchInput, setQuickSearchInput] = useState<string>("");
-
-  // Searchable Surah dropdown states
-  const [surahDropdownOpen, setSurahDropdownOpen] = useState<boolean>(false);
-  const [surahSearchQuery, setSurahSearchQuery] = useState<string>("");
-  const surahMenuRef = useRef<HTMLDivElement>(null);
-
-  // Searchable Verse dropdown states
-  const [verseDropdownOpen, setVerseDropdownOpen] = useState<boolean>(false);
-  const [verseSearchQuery, setVerseSearchQuery] = useState<string>("");
-  const verseMenuRef = useRef<HTMLDivElement>(null);
-
-  // Scroll to Top visibility states
-  const [showScrollTop, setShowScrollTop] = useState<boolean>(false);
-  const idleTimerRef = useRef<NodeJS.Timeout | null>(null);
-
   // Initialize single global Audio instance on mount
   useEffect(() => {
     if (!audioRef.current) {
@@ -82,40 +65,7 @@ export const TerjemahanTab: React.FC = () => {
     };
   }, []);
 
-  // Close dropdowns on outside click & handle scroll behavior for the floating button
-  useEffect(() => {
-    function handleClickOutside(event: MouseEvent) {
-      if (surahMenuRef.current && !surahMenuRef.current.contains(event.target as Node)) {
-        setSurahDropdownOpen(false);
-      }
-      if (verseMenuRef.current && !verseMenuRef.current.contains(event.target as Node)) {
-        setVerseDropdownOpen(false);
-      }
-    }
-    document.addEventListener("mousedown", handleClickOutside);
-
-    const handleScroll = () => {
-      if (window.scrollY > 300) {
-        setShowScrollTop(true);
-        if (idleTimerRef.current) clearTimeout(idleTimerRef.current);
-        idleTimerRef.current = setTimeout(() => {
-          setShowScrollTop(false);
-        }, 2500);
-      } else {
-        setShowScrollTop(false);
-      }
-    };
-
-    window.addEventListener("scroll", handleScroll, { passive: true });
-    
-    return () => {
-      document.removeEventListener("mousedown", handleClickOutside);
-      window.removeEventListener("scroll", handleScroll);
-      if (idleTimerRef.current) clearTimeout(idleTimerRef.current);
-    };
-  }, []);
-
-  // 1. Fetch Chapters for the Dropdown
+  // 1. Fetch Chapters on mount
   useEffect(() => {
     fetch("https://api.quran.com/api/v4/chapters?language=ms")
       .then((res) => res.json())
@@ -131,9 +81,7 @@ export const TerjemahanTab: React.FC = () => {
   useEffect(() => {
     setLoadingVerses(true);
     setSelectedVerse("all");
-    setVerseSearchQuery("");
 
-    // Completely stop and reset ongoing audio when switching surah
     if (audioRef.current) {
       audioRef.current.pause();
       audioRef.current.currentTime = 0;
@@ -184,7 +132,6 @@ export const TerjemahanTab: React.FC = () => {
   const toggleVerseAudio = (verseKey: string) => {
     if (!audioRef.current || !chapterAudioUrl || isInitializingRef.current) return;
 
-    // If currently playing this exact verse, toggle pause/stop
     if (isPlaying && currentPlayingVerseRef.current === verseKey) {
       audioRef.current.pause();
       setIsPlaying(false);
@@ -196,7 +143,6 @@ export const TerjemahanTab: React.FC = () => {
 
     isInitializingRef.current = true;
 
-    // Find timestamps for this specific verse
     const targetTimestamp = chapterTimestamps.find((t) => t.verse_key === verseKey);
     if (!targetTimestamp || !targetTimestamp.segments || targetTimestamp.segments.length === 0) {
       console.warn("No timing segments found for verse:", verseKey);
@@ -213,7 +159,6 @@ export const TerjemahanTab: React.FC = () => {
     const startOffsetMs = segments[0]?.start_ms || 0;
     const endOffsetMs = segments[segments.length - 1]?.end_ms || 0;
 
-    // Cleanly stop any existing animation frame loop
     if (animationFrameRef.current) {
       cancelAnimationFrame(animationFrameRef.current);
     }
@@ -234,13 +179,11 @@ export const TerjemahanTab: React.FC = () => {
         isInitializingRef.current = false;
       });
 
-    // Strict frame tracker to cut off audio the exact millisecond the verse ends
     const trackTime = () => {
       if (!audioRef.current || audioRef.current.paused) return;
 
       const currentTimeMs = audioRef.current.currentTime * 1000;
 
-      // Force pause as soon as current time reaches or exceeds this verse's end timestamp
       if (endOffsetMs > 0 && currentTimeMs >= endOffsetMs) {
         audioRef.current.pause();
         audioRef.current.currentTime = endOffsetMs / 1000;
@@ -264,77 +207,6 @@ export const TerjemahanTab: React.FC = () => {
     };
   };
 
-  // Handle Quick Jump submission (e.g. "8:2" or "36")
-  const handleQuickSearchSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    const cleanInput = quickSearchInput.trim();
-    if (!cleanInput) return;
-
-    if (cleanInput.includes(":")) {
-      const parts = cleanInput.split(":");
-      const surahPart = parts[0]?.trim();
-      const versePart = parts[1]?.trim();
-
-      if (surahPart && versePart) {
-        const sId = parseInt(surahPart);
-        const vNum = versePart;
-
-        if (!isNaN(sId) && sId >= 1 && sId <= 114) {
-          setSelectedSurah(sId);
-          const targetKey = `${sId}:${vNum}`;
-          setSelectedVerse(targetKey);
-        }
-      }
-    } else {
-      const sId = parseInt(cleanInput);
-      if (!isNaN(sId) && sId >= 1 && sId <= 114) {
-        setSelectedSurah(sId);
-        setSelectedVerse("all");
-      }
-    }
-    setQuickSearchInput("");
-  };
-
-  // Reset to Default (Surah 1, All verses)
-  const handleResetDefault = () => {
-    if (audioRef.current) {
-      audioRef.current.pause();
-      audioRef.current.currentTime = 0;
-    }
-    if (animationFrameRef.current) {
-      cancelAnimationFrame(animationFrameRef.current);
-    }
-    setSelectedSurah(1);
-    setSelectedVerse("all");
-    setQuickSearchInput("");
-    setSurahSearchQuery("");
-    setVerseSearchQuery("");
-    setIsPlaying(false);
-    setActiveVerseKey(null);
-    isInitializingRef.current = false;
-  };
-
-  // Smooth scroll back to top
-  const scrollToTop = () => {
-    window.scrollTo({ top: 0, behavior: "smooth" });
-  };
-
-  // Filter chapters based on search query
-  const filteredChapters = chapters.filter((ch) => {
-    const query = surahSearchQuery.toLowerCase();
-    return (
-      ch.id.toString().includes(query) ||
-      ch.name_simple.toLowerCase().includes(query) ||
-      ch.name_arabic.toLowerCase().includes(query)
-    );
-  });
-
-  // Filter verses based on search query
-  const filteredVersesList = verses.filter((v) => {
-    const query = verseSearchQuery.toLowerCase();
-    return v.verse_number.toString().includes(query) || v.verse_key.toLowerCase().includes(query);
-  });
-
   // Filter verses for display
   const filteredVerses = (() => {
     if (selectedVerse === "all") return verses;
@@ -348,11 +220,10 @@ export const TerjemahanTab: React.FC = () => {
     return num
       .toString()
       .split("")
-      .map((digit) => arabicNumbers[parseInt(digit)])
+      .map((digit) => arabicNumbers[parseInt(digit, 10)])
       .join("");
   };
 
-  // Helper to neutralize the un-renderable U+06DF black circle fallback on و۟ and ا۟
   const cleanUthmaniText = (text: string) => {
     if (!text) return "";
     return text
@@ -362,196 +233,13 @@ export const TerjemahanTab: React.FC = () => {
       .trim();
   };
 
-  const currentSurah = chapters.find((ch) => ch.id === selectedSurah);
-  const selectedVerseObj = verses.find((v) => v.verse_key === selectedVerse);
-
   return (
     <div className="space-y-6 animate-fade-in pb-12 relative">
-      {/* Selection Header */}
-      <div className="p-6 rounded-2xl neu-flat space-y-4">
-        {/* Title & Reset Default Refresh Button */}
-        <div className="flex items-center justify-between">
-          <h2 className="text-xl font-bold">Terjemahan Al-Quran</h2>
-          <button
-            onClick={handleResetDefault}
-            title="Tetapkan Semula ke Lalai"
-            className="p-2.5 rounded-xl neu-flat text-emerald-600 dark:text-emerald-400 hover:opacity-80 transition-opacity cursor-pointer flex items-center justify-center"
-          >
-            {/* Refresh Icon SVG */}
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              className="w-4 h-4"
-              fill="none"
-              viewBox="0 0 24 24"
-              stroke="currentColor"
-              strokeWidth={2.2}
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
-              />
-            </svg>
-          </button>
-        </div>
-
-        {/* Quick Jump Bar (e.g. type 8:2 or 36) */}
-        <form onSubmit={handleQuickSearchSubmit} className="flex gap-2">
-          <input
-            type="text"
-            placeholder="Cepat lompat (cth: 8:2 atau 36)..."
-            value={quickSearchInput}
-            onChange={(e) => setQuickSearchInput(e.target.value)}
-            className="w-full px-4 py-2.5 rounded-xl neu-pressed text-xs font-semibold bg-transparent outline-none"
-          />
-          <button
-            type="submit"
-            className="px-4 py-2.5 rounded-xl neu-flat text-xs font-bold text-emerald-600 dark:text-emerald-400 hover:opacity-80 transition-opacity cursor-pointer shrink-0"
-          >
-            Lompat
-          </button>
-        </form>
-
-        {/* Dropdown Selectors */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2">
-          
-          {/* Searchable Custom Neumorphic Surah Selector */}
-          <div className="space-y-1 relative" ref={surahMenuRef}>
-            <label className="text-xs font-semibold opacity-70">Pilih Surah</label>
-            <button
-              onClick={() => {
-                setSurahDropdownOpen(!surahDropdownOpen);
-                setSurahSearchQuery("");
-              }}
-              className="w-full px-4 py-2.5 rounded-xl neu-pressed text-xs font-semibold flex items-center justify-between cursor-pointer"
-            >
-              <span>
-                {currentSurah
-                  ? `${currentSurah.id}. ${currentSurah.name_simple}`
-                  : "Memuatkan..."}
-              </span>
-              <span className="font-arabic text-sm text-emerald-600 dark:text-emerald-400">
-                {currentSurah ? currentSurah.name_arabic : ""}
-              </span>
-            </button>
-
-            {surahDropdownOpen && (
-              <div className="absolute left-0 right-0 mt-2 rounded-2xl neu-flat p-3 z-50 shadow-2xl bg-white dark:bg-[#1e1e24] space-y-2">
-                <input
-                  type="text"
-                  placeholder="Cari surah (cth: Al-Fatihah, 2)..."
-                  value={surahSearchQuery}
-                  onChange={(e) => setSurahSearchQuery(e.target.value)}
-                  autoFocus
-                  className="w-full px-3 py-2 rounded-xl neu-pressed text-xs font-semibold bg-transparent outline-none"
-                />
-
-                <div className="max-h-52 overflow-y-auto space-y-1 pr-1">
-                  {filteredChapters.length > 0 ? (
-                    filteredChapters.map((ch) => (
-                      <button
-                        key={ch.id}
-                        onClick={() => {
-                          setSelectedSurah(ch.id);
-                          setSurahDropdownOpen(false);
-                          setSurahSearchQuery("");
-                        }}
-                        className={`w-full flex items-center justify-between px-3 py-2 text-xs font-semibold rounded-xl transition-colors cursor-pointer ${
-                          selectedSurah === ch.id
-                            ? "neu-pressed text-emerald-600 dark:text-emerald-400"
-                            : "hover:bg-black/5 dark:hover:bg-white/5 opacity-80"
-                        }`}
-                      >
-                        <span>{ch.id}. {ch.name_simple}</span>
-                        <span className="font-arabic text-sm">{ch.name_arabic}</span>
-                      </button>
-                    ))
-                  ) : (
-                    <div className="text-center py-4 text-xs opacity-50">
-                      Tiada surah dijumpai
-                    </div>
-                  )}
-                </div>
-              </div>
-            )}
-          </div>
-
-          {/* Searchable Custom Neumorphic Verse Selector */}
-          <div className="space-y-1 relative" ref={verseMenuRef}>
-            <label className="text-xs font-semibold opacity-70">Pilih Ayat</label>
-            <button
-              onClick={() => {
-                setVerseDropdownOpen(!verseDropdownOpen);
-                setVerseSearchQuery("");
-              }}
-              disabled={loadingVerses || verses.length === 0}
-              className="w-full px-4 py-2.5 rounded-xl neu-pressed text-xs font-semibold flex items-center justify-between cursor-pointer disabled:opacity-50"
-            >
-              <span>
-                {selectedVerse === "all"
-                  ? `Semua Ayat (${verses.length})`
-                  : `Ayat ${selectedVerseObj ? selectedVerseObj.verse_number : selectedVerse}`}
-              </span>
-              <span className="text-xs opacity-75">▼</span>
-            </button>
-
-            {verseDropdownOpen && (
-              <div className="absolute left-0 right-0 mt-2 rounded-2xl neu-flat p-3 z-50 shadow-2xl bg-white dark:bg-[#1e1e24] space-y-2">
-                <input
-                  type="text"
-                  placeholder="Cari ayat (cth: 21)..."
-                  value={verseSearchQuery}
-                  onChange={(e) => setVerseSearchQuery(e.target.value)}
-                  autoFocus
-                  className="w-full px-3 py-2 rounded-xl neu-pressed text-xs font-semibold bg-transparent outline-none"
-                />
-
-                <div className="max-h-52 overflow-y-auto space-y-1 pr-1">
-                  <button
-                    onClick={() => {
-                      setSelectedVerse("all");
-                      setVerseDropdownOpen(false);
-                      setVerseSearchQuery("");
-                    }}
-                    className={`w-full text-left px-3 py-2 text-xs font-semibold rounded-xl transition-colors cursor-pointer ${
-                      selectedVerse === "all"
-                        ? "neu-pressed text-emerald-600 dark:text-emerald-400"
-                        : "hover:bg-black/5 dark:hover:bg-white/5 opacity-80"
-                    }`}
-                  >
-                    Semua Ayat ({verses.length})
-                  </button>
-
-                  {filteredVersesList.length > 0 ? (
-                    filteredVersesList.map((v) => (
-                      <button
-                        key={v.id}
-                        onClick={() => {
-                          setSelectedVerse(v.verse_key);
-                          setVerseDropdownOpen(false);
-                          setVerseSearchQuery("");
-                        }}
-                        className={`w-full text-left px-3 py-2 text-xs font-semibold rounded-xl transition-colors cursor-pointer ${
-                          selectedVerse === v.verse_key
-                            ? "neu-pressed text-emerald-600 dark:text-emerald-400"
-                            : "hover:bg-black/5 dark:hover:bg-white/5 opacity-80"
-                        }`}
-                      >
-                        Ayat {v.verse_number}
-                      </button>
-                    ))
-                  ) : (
-                    <div className="text-center py-4 text-xs opacity-50">
-                      Tiada ayat dijumpai
-                    </div>
-                  )}
-                </div>
-              </div>
-            )}
-          </div>
-
-        </div>
-      </div>
+      <style jsx>{`
+        .emerald-icon {
+          filter: brightness(0) saturate(100%) invert(42%) sepia(87%) saturate(614%) hue-rotate(120deg) brightness(93%) contrast(93%);
+        }
+      `}</style>
 
       {/* Verses List Content */}
       {loadingVerses ? (
@@ -643,28 +331,6 @@ export const TerjemahanTab: React.FC = () => {
           })}
         </div>
       )}
-
-      {/* Floating Scroll-to-Top Button */}
-      <button
-        onClick={scrollToTop}
-        aria-label="Kembali ke atas"
-        className={`fixed bottom-6 right-6 z-40 p-3.5 rounded-full neu-flat text-emerald-600 dark:text-emerald-400 shadow-xl transition-all duration-300 cursor-pointer flex items-center justify-center ${
-          showScrollTop
-            ? "opacity-90 translate-y-0 pointer-events-auto hover:opacity-100 scale-100"
-            : "opacity-0 translate-y-4 pointer-events-none scale-95"
-        }`}
-      >
-        <svg
-          xmlns="http://www.w3.org/2000/svg"
-          className="w-5 h-5"
-          fill="none"
-          viewBox="0 0 24 24"
-          stroke="currentColor"
-          strokeWidth={2.5}
-        >
-          <path strokeLinecap="round" strokeLinejoin="round" d="M5 15l7-7 7 7" />
-        </svg>
-      </button>
     </div>
   );
 };

@@ -13,7 +13,6 @@ export const QuranTab: React.FC = () => {
   const [selectedPage, setSelectedPage] = useState<number>(1);
   const [pageData, setPageData] = useState<any>(null);
   const [loading, setLoading] = useState<boolean>(true);
-  const [quickSearchInput, setQuickSearchInput] = useState<string>("");
 
   // Audio & Timestamp state for active chapter(s) on the current page
   const [chapterAudioUrl, setChapterAudioUrl] = useState<string>("");
@@ -26,6 +25,10 @@ export const QuranTab: React.FC = () => {
   const animationFrameRef = useRef<number | null>(null);
   const currentPlayingVerseRef = useRef<string | null>(null);
   const isInitializingRef = useRef<boolean>(false);
+
+  // Swipe gesture touch tracking refs
+  const touchStartXRef = useRef<number>(0);
+  const touchEndXRef = useRef<number>(0);
 
   // Initialize global Audio instance on mount
   useEffect(() => {
@@ -153,7 +156,7 @@ export const QuranTab: React.FC = () => {
       return;
     }
 
-    const surahNum = parseInt(verseKey?.split(":")[0] || "1");
+    const surahNum = parseInt(verseKey?.split(":")[0] || "1", 10);
     if (isNaN(surahNum)) return;
 
     isInitializingRef.current = true;
@@ -170,7 +173,6 @@ export const QuranTab: React.FC = () => {
       return;
     }
 
-    // Grab the start of the first word and end of the last word in this verse
     const startOffsetMs = targetTimestamp.segments[0]?.[1] || 0;
     const endOffsetMs = targetTimestamp.segments[targetTimestamp.segments.length - 1]?.[2] || 0;
 
@@ -194,7 +196,6 @@ export const QuranTab: React.FC = () => {
         isInitializingRef.current = false;
       });
 
-    // Frame tracker to stop audio and clear highlight precisely when the verse ends
     const trackTime = () => {
       if (!audioRef.current || audioRef.current.paused) return;
       const currentTimeMs = audioRef.current.currentTime * 1000;
@@ -222,71 +223,47 @@ export const QuranTab: React.FC = () => {
     };
   };
 
-  const handleQuickSearch = (e: React.FormEvent) => {
-    e.preventDefault();
-    const p = parseInt(quickSearchInput.trim());
-    if (!isNaN(p) && p >= 1 && p <= 604) setSelectedPage(p);
-    setQuickSearchInput("");
+  // Touch and Swipe handlers
+  const handleTouchStart = (e: React.TouchEvent) => {
+    touchStartXRef.current = e.targetTouches[0]?.clientX || 0;
+  };
+
+  const handleTouchMove = (e: React.TouchEvent) => {
+    touchEndXRef.current = e.targetTouches[0]?.clientX || 0;
+  };
+
+  const handleTouchEnd = () => {
+    if (!touchStartXRef.current || !touchEndXRef.current) return;
+    const distance = touchStartXRef.current - touchEndXRef.current;
+    const minSwipeDistance = 50;
+
+    if (distance > minSwipeDistance) {
+      setSelectedPage((prev) => Math.min(prev + 1, 604));
+    } else if (distance < -minSwipeDistance) {
+      setSelectedPage((prev) => Math.max(prev - 1, 1));
+    }
+
+    touchStartXRef.current = 0;
+    touchEndXRef.current = 0;
   };
 
   return (
-    <div className="space-y-6 animate-fade-in pb-12 relative max-w-4xl mx-auto">
-      {/* Control Header */}
-      <div className="p-4 md:p-6 rounded-2xl neu-flat space-y-4">
-        <div className="flex items-center justify-between">
-          <h2 className="text-base md:text-xl font-bold">
-            Al-Quran (Madinah Mushaf - Page {selectedPage} / 604)
-          </h2>
-          <button
-            onClick={() => setSelectedPage(1)}
-            title="Reset to Page 1"
-            className="p-2.5 rounded-xl neu-flat text-emerald-600 dark:text-emerald-400 font-bold cursor-pointer"
-          >
-            Reset
-          </button>
-        </div>
-
-        <form onSubmit={handleQuickSearch} className="flex gap-2">
-          <input
-            type="text"
-            placeholder="Jump to page (1 - 604)..."
-            value={quickSearchInput}
-            onChange={(e) => setQuickSearchInput(e.target.value)}
-            className="w-full px-4 py-2.5 rounded-xl neu-pressed text-xs font-semibold bg-transparent outline-none"
-          />
-          <button
-            type="submit"
-            className="px-4 py-2.5 rounded-xl neu-flat text-xs font-bold text-emerald-600 dark:text-emerald-400 cursor-pointer shrink-0"
-          >
-            Go
-          </button>
-        </form>
-
-        <div className="flex items-center justify-between pt-2">
-          <button
-            onClick={() => setSelectedPage((prev) => Math.max(prev - 1, 1))}
-            disabled={selectedPage <= 1}
-            className="px-4 py-2 rounded-xl neu-flat text-xs font-bold text-emerald-600 dark:text-emerald-400 disabled:opacity-40 cursor-pointer"
-          >
-            ← Previous Page
-          </button>
-          <span className="text-xs font-semibold opacity-75">
-            Page {selectedPage} / 604
-          </span>
-          <button
-            onClick={() => setSelectedPage((prev) => Math.min(prev + 1, 604))}
-            disabled={selectedPage >= 604}
-            className="px-4 py-2 rounded-xl neu-flat text-xs font-bold text-emerald-600 dark:text-emerald-400 disabled:opacity-40 cursor-pointer"
-          >
-            Next Page →
-          </button>
-        </div>
-      </div>
+    <div 
+      className="space-y-4 animate-fade-in pb-12 relative max-w-4xl mx-auto"
+      onTouchStart={handleTouchStart}
+      onTouchMove={handleTouchMove}
+      onTouchEnd={handleTouchEnd}
+    >
+      <style jsx>{`
+        .emerald-icon {
+          filter: brightness(0) saturate(100%) invert(42%) sepia(87%) saturate(614%) hue-rotate(120deg) brightness(93%) contrast(93%);
+        }
+      `}</style>
 
       {/* Render MushafPage Component */}
       {loading || !pageData ? (
         <div className="p-12 rounded-2xl neu-pressed text-center text-sm opacity-75">
-          Loading Quran physical pages...
+          Memuatkan halaman Mushaf...
         </div>
       ) : (
         <div className="flex justify-center items-center">
@@ -298,6 +275,31 @@ export const QuranTab: React.FC = () => {
           />
         </div>
       )}
+
+      {/* Compact Navigation Bar using the exact small circle design style */}
+      <div className="mt-3 flex justify-center select-none gap-4 items-center">
+        <button
+          onClick={() => setSelectedPage((prev) => Math.max(prev - 1, 1))}
+          disabled={selectedPage <= 1}
+          aria-label="Halaman Sebelumnya"
+          className="neu-flat w-8 h-8 rounded-full flex items-center justify-center text-emerald-600 dark:text-emerald-400 border border-amber-900/10 shadow-sm disabled:opacity-30 cursor-pointer hover:opacity-85 transition-opacity"
+        >
+          <img src="/icons/prev.svg" alt="Prev" className="w-3.5 h-3.5 emerald-icon" />
+        </button>
+
+        <div className="neu-flat w-8 h-8 rounded-full flex items-center justify-center text-xs font-sans font-medium text-amber-900/80 dark:text-amber-100/70 border border-amber-900/10 shadow-sm">
+          {selectedPage}
+        </div>
+
+        <button
+          onClick={() => setSelectedPage((prev) => Math.min(prev + 1, 604))}
+          disabled={selectedPage >= 604}
+          aria-label="Halaman Seterusnya"
+          className="neu-flat w-8 h-8 rounded-full flex items-center justify-center text-emerald-600 dark:text-emerald-400 border border-amber-900/10 shadow-sm disabled:opacity-30 cursor-pointer hover:opacity-85 transition-opacity"
+        >
+          <img src="/icons/next.svg" alt="Next" className="w-3.5 h-3.5 emerald-icon" />
+        </button>
+      </div>
     </div>
   );
 };
