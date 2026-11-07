@@ -3,13 +3,6 @@
 
 import React, { useEffect, useState, useRef } from "react";
 
-interface Chapter {
-  id: number;
-  name_simple: string;
-  name_arabic: string;
-  verses_count: number;
-}
-
 interface VerseData {
   id: number;
   verse_key: string;
@@ -32,9 +25,8 @@ interface VerseTimestamp {
 }
 
 export const TerjemahanTab: React.FC = () => {
-  const [chapters, setChapters] = useState<Chapter[]>([]);
-  const [selectedSurah, setSelectedSurah] = useState<number>(1);
-  const [selectedVerse, setSelectedVerse] = useState<string>("all");
+  const [selectedSurah] = useState<number>(1);
+  const [selectedVerse] = useState<string>("all");
   const [verses, setVerses] = useState<VerseData[]>([]);
   const [loadingVerses, setLoadingVerses] = useState<boolean>(false);
   
@@ -65,22 +57,9 @@ export const TerjemahanTab: React.FC = () => {
     };
   }, []);
 
-  // 1. Fetch Chapters on mount
-  useEffect(() => {
-    fetch("https://api.quran.com/api/v4/chapters?language=ms")
-      .then((res) => res.json())
-      .then((data) => {
-        setChapters(data.chapters);
-      })
-      .catch((err) => {
-        console.error("Failed to load chapters:", err);
-      });
-  }, []);
-
-  // 2. Fetch ALL Verses and Chapter Audio Timings for the selected Surah
+  // Fetch ALL Verses and Chapter Audio Timings for the selected Surah
   useEffect(() => {
     setLoadingVerses(true);
-    setSelectedVerse("all");
 
     if (audioRef.current) {
       audioRef.current.pause();
