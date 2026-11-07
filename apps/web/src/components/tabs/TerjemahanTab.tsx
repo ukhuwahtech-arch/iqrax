@@ -36,7 +36,6 @@ export const TerjemahanTab: React.FC = () => {
   const [selectedSurah, setSelectedSurah] = useState<number>(1);
   const [selectedVerse, setSelectedVerse] = useState<string>("all");
   const [verses, setVerses] = useState<VerseData[]>([]);
-  const [loadingChapters, setLoadingChapters] = useState<boolean>(true);
   const [loadingVerses, setLoadingVerses] = useState<boolean>(false);
   
   // Audio & Timestamp state for the entire chapter
@@ -122,11 +121,9 @@ export const TerjemahanTab: React.FC = () => {
       .then((res) => res.json())
       .then((data) => {
         setChapters(data.chapters);
-        setLoadingChapters(false);
       })
       .catch((err) => {
         console.error("Failed to load chapters:", err);
-        setLoadingChapters(false);
       });
   }, []);
 

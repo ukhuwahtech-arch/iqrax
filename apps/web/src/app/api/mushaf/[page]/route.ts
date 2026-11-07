@@ -4,7 +4,7 @@ import path from 'path';
 import { DatabaseSync } from 'node:sqlite';
 
 export async function GET(
-  request: Request,
+  _request: Request,
   { params }: { params: Promise<{ page: string }> }
 ) {
   const resolvedParams = await params;
@@ -14,8 +14,8 @@ export async function GET(
     return NextResponse.json({ error: 'Invalid page number' }, { status: 400 });
   }
 
-  // Absolute path to your verified database file in the project root
-  const dbPath = 'C:/Users/dxiau/iqrax/qpc-v2-15-lines.db';
+  // Cross-platform database path (works locally and on Vercel monorepo structure)
+  const dbPath = path.join(process.cwd(), '../../qpc-v2-15-lines.db');
   
   try {
     const database = new DatabaseSync(dbPath, { readOnly: true });
