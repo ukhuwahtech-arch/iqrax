@@ -13,13 +13,19 @@ node_modules
 
 # testing
 /coverage
+**/coverage/
 
-# next.js
-/.next/
-/out/
+# next.js & mobile builds
+.next
+**/.next/
+out
+**/out/
+.expo
+**/.expo/
 
 # production
-/build
+build
+**/build/
 **/dist/
 
 # misc
@@ -32,7 +38,7 @@ yarn-debug.log*
 yarn-error.log*
 .pnpm-debug.log*
 
-# env files (can opt-in for committing if needed)
+# env files
 .env*
 
 # vercel
