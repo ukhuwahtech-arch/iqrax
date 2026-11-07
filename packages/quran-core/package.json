@@ -1,0 +1,10 @@
+{
+  "name": "@iqrax/quran-core",
+  "version": "1.0.0",
+  "private": true,
+  "main": "index.ts",
+  "types": "index.ts",
+  "devDependencies": {
+    "@repo/typescript-config": "workspace:*"
+  }
+}

@@ -1,0 +1,15 @@
+{
+  "name": "iqrax",
+  "version": "1.0.0",
+  "private": true,
+  "packageManager": "pnpm@9.12.2",
+  "scripts": {
+    "dev:web": "turbo dev --filter=@iqrax/web",
+    "dev:mobile": "turbo dev --filter=@iqrax/mobile",
+    "build": "turbo build",
+    "lint": "turbo lint"
+  },
+  "devDependencies": {
+    "turbo": "^2.2.0"
+  }
+}
