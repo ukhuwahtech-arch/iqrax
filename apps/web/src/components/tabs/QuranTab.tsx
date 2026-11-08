@@ -313,30 +313,30 @@ export const QuranTab: React.FC<QuranTabProps> = ({
           Juzuk {getJuzukNumber(selectedPage)}
         </div>
 
-        {/* Centered Page Navigation Controls (next.svg on left, prev.svg on right) */}
+        {/* Centered Page Navigation Controls (prev.svg on left, next.svg on right) */}
         <div className="absolute left-1/2 -translate-x-1/2 flex items-center gap-4">
-          {/* Left Button (Next Page -> Uses next.svg) */}
+          {/* Left Button (Uses prev.svg) */}
           <button
             onClick={() => setSelectedPage((prev) => Math.min(prev + 1, 604))}
             disabled={selectedPage >= 604}
             aria-label="Halaman Seterusnya"
             className="neu-flat w-8 h-8 rounded-full flex items-center justify-center text-emerald-600 dark:text-emerald-400 border border-amber-900/10 shadow-sm disabled:opacity-30 cursor-pointer hover:opacity-85 transition-opacity"
           >
-            <img src="/icons/next.svg" alt="Next" className="w-3.5 h-3.5 emerald-icon" />
+            <img src="/icons/prev.svg" alt="Next" className="w-3.5 h-3.5 emerald-icon" />
           </button>
 
           <span className="text-sm font-sans font-semibold text-emerald-600 dark:text-emerald-400 px-1 select-none">
             {selectedPage}
           </span>
 
-          {/* Right Button (Previous Page -> Uses prev.svg) */}
+          {/* Right Button (Uses next.svg) */}
           <button
             onClick={() => setSelectedPage((prev) => Math.max(prev - 1, 1))}
             disabled={selectedPage <= 1}
             aria-label="Halaman Sebelumnya"
             className="neu-flat w-8 h-8 rounded-full flex items-center justify-center text-emerald-600 dark:text-emerald-400 border border-amber-900/10 shadow-sm disabled:opacity-30 cursor-pointer hover:opacity-85 transition-opacity"
           >
-            <img src="/icons/prev.svg" alt="Prev" className="w-3.5 h-3.5 emerald-icon" />
+            <img src="/icons/next.svg" alt="Prev" className="w-3.5 h-3.5 emerald-icon" />
           </button>
         </div>
 
