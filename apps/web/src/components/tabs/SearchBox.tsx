@@ -261,7 +261,7 @@ export const SearchBox: React.FC<SearchBoxProps> = ({
                 {surahDropdownOpen && (
                   <div 
                     onClick={(e) => e.stopPropagation()}
-                    className="absolute left-0 mt-2 w-64 sm:w-72 rounded-2xl neu-flat p-3 z-50 shadow-2xl bg-white dark:bg-[#1e1e24] space-y-2 transition-all duration-300 ease-out transform origin-top font-poppins font-normal text-[14px]"
+                    className="absolute left-0 sm:left-auto mt-2 w-full sm:w-72 rounded-2xl neu-flat p-3 z-50 shadow-2xl bg-white dark:bg-[#1e1e24] space-y-2 transition-all duration-300 ease-out transform origin-top font-poppins font-normal text-[14px]"
                   >
                     <div className="relative w-full">
                       <input
@@ -343,7 +343,7 @@ export const SearchBox: React.FC<SearchBoxProps> = ({
                 {verseDropdownOpen && (
                   <div 
                     onClick={(e) => e.stopPropagation()}
-                    className="absolute left-0 mt-2 w-48 sm:w-56 rounded-2xl neu-flat p-3 z-50 shadow-2xl bg-white dark:bg-[#1e1e24] space-y-2 transition-all duration-300 ease-out transform origin-top font-poppins font-normal text-[14px]"
+                    className="absolute right-0 sm:left-auto mt-2 w-full sm:w-56 rounded-2xl neu-flat p-3 z-50 shadow-2xl bg-white dark:bg-[#1e1e24] space-y-2 transition-all duration-300 ease-out transform origin-top font-poppins font-normal text-[14px]"
                   >
                     <div className="relative w-full">
                       <input

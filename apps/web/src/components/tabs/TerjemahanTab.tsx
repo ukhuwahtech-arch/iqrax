@@ -13,17 +13,6 @@ interface VerseData {
   }[];
 }
 
-interface Segment {
-  word_position: number;
-  start_ms: number;
-  end_ms: number;
-}
-
-interface VerseTimestamp {
-  verse_key: string;
-  segments: number[][];
-}
-
 interface TerjemahanTabProps {
   selectedSurah?: number | "all";
   selectedVerse?: string;
@@ -38,13 +27,10 @@ export const TerjemahanTab: React.FC<TerjemahanTabProps> = ({
   const [verses, setVerses] = useState<VerseData[]>([]);
   const [loadingVerses, setLoadingVerses] = useState<boolean>(false);
   
-  const [chapterAudioUrl, setChapterAudioUrl] = useState<string>("");
-  const [chapterTimestamps, setChapterTimestamps] = useState<VerseTimestamp[]>([]);
   const [activeVerseKey, setActiveVerseKey] = useState<string | null>(null);
   const [isPlaying, setIsPlaying] = useState<boolean>(false);
 
   const audioRef = useRef<HTMLAudioElement | null>(null);
-  const animationFrameRef = useRef<number | null>(null);
   const currentPlayingVerseRef = useRef<string | null>(null);
   const isInitializingRef = useRef<boolean>(false);
   
@@ -61,7 +47,6 @@ export const TerjemahanTab: React.FC<TerjemahanTabProps> = ({
         audioRef.current.pause();
         audioRef.current.src = "";
       }
-      if (animationFrameRef.current) cancelAnimationFrame(animationFrameRef.current);
     };
   }, []);
 
@@ -74,9 +59,6 @@ export const TerjemahanTab: React.FC<TerjemahanTabProps> = ({
       audioRef.current.pause();
       audioRef.current.currentTime = 0;
       audioRef.current.src = "";
-    }
-    if (animationFrameRef.current) {
-      cancelAnimationFrame(animationFrameRef.current);
     }
     setIsPlaying(false);
     setActiveVerseKey(null);
@@ -137,32 +119,12 @@ export const TerjemahanTab: React.FC<TerjemahanTabProps> = ({
             setLoadingVerses(false);
           }
         } else {
-          const [verseRes, audioRes] = await Promise.all([
-            fetch(
-              `https://api.quran.com/api/v4/verses/by_chapter/${selectedSurah}?language=ms&translations=39&fields=text_uthmani,verse_number&per_page=300`
-            ).then((res) => res.json()),
-            fetch(
-              `https://api.quran.com/api/v4/chapter_recitations/7/${selectedSurah}?segments=true`
-            ).then((res) => res.json())
-          ]);
+          const verseRes = await fetch(
+            `https://api.quran.com/api/v4/verses/by_chapter/${selectedSurah}?language=ms&translations=39&fields=text_uthmani,verse_number&per_page=300`
+          ).then((res) => res.json());
 
           if (isMounted) {
             setVerses(verseRes.verses || []);
-
-            const audioFile = audioRes.audio_file;
-            if (audioFile && audioFile.audio_url) {
-              const fullUrl = audioFile.audio_url.startsWith("http")
-                ? audioFile.audio_url
-                : `https://verses.quran.com/${audioFile.audio_url}`;
-              setChapterAudioUrl(fullUrl);
-              setChapterTimestamps(audioFile.timestamps || []);
-              
-              if (audioRef.current) {
-                audioRef.current.src = fullUrl;
-                audioRef.current.load();
-              }
-            }
-
             setLoadingVerses(false);
           }
         }
@@ -188,99 +150,57 @@ export const TerjemahanTab: React.FC<TerjemahanTabProps> = ({
     }
   }, [selectedVerse, verses]);
 
+  // Direct Single-Verse Audio Playback Handler for Terjemahan
   const toggleVerseAudio = async (verseKey: string) => {
     if (!audioRef.current || isInitializingRef.current) return;
 
     if (isPlaying && currentPlayingVerseRef.current === verseKey) {
       audioRef.current.pause();
+      audioRef.current.currentTime = 0;
+      audioRef.current.src = "";
       setIsPlaying(false);
       setActiveVerseKey(null);
       currentPlayingVerseRef.current = null;
-      if (animationFrameRef.current) cancelAnimationFrame(animationFrameRef.current);
       return;
     }
+
+    const [surahStr, verseStr] = verseKey.split(":");
+    const surahNum = parseInt(surahStr || "1", 10);
+    const verseNum = parseInt(verseStr || "1", 10);
+    if (isNaN(surahNum) || isNaN(verseNum)) return;
 
     isInitializingRef.current = true;
-    const surahNum = parseInt(verseKey.split(":")[0] || "1", 10);
-
-    if (!chapterAudioUrl || currentPlayingVerseRef.current === null) {
-      try {
-        const audioRes = await fetch(`https://api.quran.com/api/v4/chapter_recitations/7/${surahNum}?segments=true`);
-        const audioData = await audioRes.json();
-        const audioFile = audioData.audio_file;
-        if (audioFile && audioFile.audio_url) {
-          const fullUrl = audioFile.audio_url.startsWith("http") ? audioFile.audio_url : `https://verses.quran.com/${audioFile.audio_url}`;
-          setChapterAudioUrl(fullUrl);
-          setChapterTimestamps(audioFile.timestamps || []);
-          audioRef.current.src = fullUrl;
-          audioRef.current.load();
-        }
-      } catch (e) {
-        console.error("Failed to load audio for verse key", e);
-      }
-    }
-
-    const targetTimestamp = chapterTimestamps.find((t) => t.verse_key === verseKey);
-    if (!targetTimestamp || !targetTimestamp.segments || targetTimestamp.segments.length === 0) {
-      isInitializingRef.current = false;
-      return;
-    }
-
-    const segments: Segment[] = targetTimestamp.segments.map((seg) => ({
-      word_position: seg[0] ?? 0,
-      start_ms: seg[1] ?? 0,
-      end_ms: seg[2] ?? 0,
-    }));
-
-    const startOffsetMs = segments[0]?.start_ms || 0;
-    const endOffsetMs = segments[segments.length - 1]?.end_ms || 0;
-
-    if (animationFrameRef.current) {
-      cancelAnimationFrame(animationFrameRef.current);
-    }
-
-    audioRef.current.pause();
-    audioRef.current.currentTime = startOffsetMs / 1000;
     
-    audioRef.current
-      .play()
-      .then(() => {
-        setIsPlaying(true);
-        setActiveVerseKey(verseKey);
-        currentPlayingVerseRef.current = verseKey;
-        isInitializingRef.current = false;
-      })
-      .catch((err) => {
-        console.error("Audio playback error:", err);
-        isInitializingRef.current = false;
-      });
+    audioRef.current.pause();
+    audioRef.current.currentTime = 0;
 
-    const trackTime = () => {
-      if (!audioRef.current || audioRef.current.paused) return;
+    try {
+      const paddedSurah = String(surahNum).padStart(3, '0');
+      const paddedVerse = String(verseNum).padStart(3, '0');
+      const directAudioUrl = `https://verses.quran.com/Alafasy/mp3/${paddedSurah}${paddedVerse}.mp3`;
 
-      const currentTimeMs = audioRef.current.currentTime * 1000;
+      audioRef.current.src = directAudioUrl;
+      audioRef.current.load();
 
-      if (endOffsetMs > 0 && currentTimeMs >= endOffsetMs) {
-        audioRef.current.pause();
-        audioRef.current.currentTime = endOffsetMs / 1000;
+      audioRef.current.onended = () => {
+        if (audioRef.current) {
+          audioRef.current.pause();
+          audioRef.current.currentTime = 0;
+        }
         setIsPlaying(false);
         setActiveVerseKey(null);
         currentPlayingVerseRef.current = null;
-        if (animationFrameRef.current) cancelAnimationFrame(animationFrameRef.current);
-        return;
-      }
+      };
 
-      animationFrameRef.current = requestAnimationFrame(trackTime);
-    };
-
-    animationFrameRef.current = requestAnimationFrame(trackTime);
-
-    audioRef.current.onended = () => {
-      setIsPlaying(false);
-      setActiveVerseKey(null);
-      currentPlayingVerseRef.current = null;
-      if (animationFrameRef.current) cancelAnimationFrame(animationFrameRef.current);
-    };
+      await audioRef.current.play();
+      setIsPlaying(true);
+      setActiveVerseKey(verseKey);
+      currentPlayingVerseRef.current = verseKey;
+    } catch (err) {
+      console.error("Failed to play verse audio:", err);
+    } finally {
+      isInitializingRef.current = false;
+    }
   };
 
   const toArabicNumber = (num: number) => {
