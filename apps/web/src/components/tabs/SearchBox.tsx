@@ -45,6 +45,17 @@ export const SearchBox: React.FC<SearchBoxProps> = ({
 
   const containerRef = useRef<HTMLDivElement>(null);
   const initialScrollYRef = useRef<number>(0);
+  const justOpenedRef = useRef<boolean>(false);
+
+  useEffect(() => {
+    if (isOpen) {
+      justOpenedRef.current = true;
+      const timer = setTimeout(() => {
+        justOpenedRef.current = false;
+      }, 300);
+      return () => clearTimeout(timer);
+    }
+  }, [isOpen]);
 
   useEffect(() => {
     if (typeof selectedSurahId === "number") {
@@ -90,6 +101,8 @@ export const SearchBox: React.FC<SearchBoxProps> = ({
   // Robust click outside handler for mobile & desktop
   useEffect(() => {
     function handleClickOutside(event: MouseEvent | TouchEvent) {
+      if (justOpenedRef.current) return;
+
       if (containerRef.current) {
         if (!containerRef.current.contains(event.target as Node)) {
           onClose();

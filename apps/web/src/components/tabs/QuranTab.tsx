@@ -4,11 +4,6 @@
 import React, { useState, useEffect, useRef } from "react";
 import MushafPage from "../MushafPage";
 
-interface VerseTimestamp {
-  verse_key: string;
-  segments: number[][];
-}
-
 interface QuranTabProps {
   selectedSurah?: number | "all";
   selectedVerse?: string;
@@ -24,15 +19,11 @@ export const QuranTab: React.FC<QuranTabProps> = ({
   const [pageData, setPageData] = useState<any>(null);
   const [loading, setLoading] = useState<boolean>(true);
 
-  // Audio & Timestamp state for active chapter(s) on the current page
-  const [chapterAudioUrl, setChapterAudioUrl] = useState<string>("");
-  const [chapterTimestamps, setChapterTimestamps] = useState<VerseTimestamp[]>([]);
+  // Audio state for active verse playback
   const [activeVerseKey, setActiveVerseKey] = useState<string | null>(null);
   const [isPlaying, setIsPlaying] = useState<boolean>(false);
-  const [currentSurahAudioLoaded, setCurrentSurahAudioLoaded] = useState<number | null>(null);
 
   const audioRef = useRef<HTMLAudioElement | null>(null);
-  const animationFrameRef = useRef<number | null>(null);
   const currentPlayingVerseRef = useRef<string | null>(null);
   const isInitializingRef = useRef<boolean>(false);
 
@@ -69,7 +60,6 @@ export const QuranTab: React.FC<QuranTabProps> = ({
         audioRef.current.pause();
         audioRef.current.src = "";
       }
-      if (animationFrameRef.current) cancelAnimationFrame(animationFrameRef.current);
     };
   }, []);
 
@@ -141,37 +131,7 @@ export const QuranTab: React.FC<QuranTabProps> = ({
     };
   }, [selectedPage]);
 
-  // Helper to fetch chapter audio and timestamps when a verse is clicked
-  const ensureChapterAudioLoaded = async (surahNumber: number): Promise<boolean> => {
-    if (currentSurahAudioLoaded === surahNumber && chapterAudioUrl) return true;
-
-    try {
-      const res = await fetch(`https://api.quran.com/api/v4/chapter_recitations/7/${surahNumber}?segments=true`);
-      const audioData = await res.json();
-      const audioFile = audioData.audio_file;
-
-      if (audioFile && audioFile.audio_url) {
-        const fullUrl = audioFile.audio_url.startsWith("http")
-          ? audioFile.audio_url
-          : `https://verses.quran.com/${audioFile.audio_url}`;
-        
-        setChapterAudioUrl(fullUrl);
-        setChapterTimestamps(audioFile.timestamps || []);
-        setCurrentSurahAudioLoaded(surahNumber);
-
-        if (audioRef.current) {
-          audioRef.current.src = fullUrl;
-          audioRef.current.load();
-        }
-        return true;
-      }
-    } catch (err) {
-      console.error("Failed to load chapter audio/timestamps:", err);
-    }
-    return false;
-  };
-
-  // Audio Playback Handler with precise edge-caching & timing sync
+  // Reliable Direct Single-Verse Audio Playback Handler
   const handleVerseClick = async (verseKey: string) => {
     if (!audioRef.current || isInitializingRef.current) return;
 
@@ -180,77 +140,41 @@ export const QuranTab: React.FC<QuranTabProps> = ({
       setIsPlaying(false);
       setActiveVerseKey(null);
       currentPlayingVerseRef.current = null;
-      if (animationFrameRef.current) cancelAnimationFrame(animationFrameRef.current);
       return;
     }
 
-    const surahNum = parseInt(verseKey?.split(":")[0] || "1", 10);
-    if (isNaN(surahNum)) return;
+    const [surahStr, verseStr] = verseKey.split(":");
+    const surahNum = parseInt(surahStr || "1", 10);
+    const verseNum = parseInt(verseStr || "1", 10);
+    if (isNaN(surahNum) || isNaN(verseNum)) return;
 
     isInitializingRef.current = true;
-    const loaded = await ensureChapterAudioLoaded(surahNum);
-    if (!loaded) {
-      isInitializingRef.current = false;
-      return;
-    }
-
-    const targetTimestamp = chapterTimestamps.find((t) => t.verse_key === verseKey);
-    if (!targetTimestamp || !targetTimestamp.segments || targetTimestamp.segments.length === 0) {
-      console.warn("No timing segments found for verse:", verseKey);
-      isInitializingRef.current = false;
-      return;
-    }
-
-    const startOffsetMs = targetTimestamp.segments[0]?.[1] || 0;
-    const endOffsetMs = targetTimestamp.segments[targetTimestamp.segments.length - 1]?.[2] || 0;
-
-    if (animationFrameRef.current) {
-      cancelAnimationFrame(animationFrameRef.current);
-    }
-
     audioRef.current.pause();
-    // Precise floating-point time positioning with a slight safety buffer
-    audioRef.current.currentTime = Math.max(0, startOffsetMs / 1000 - 0.05);
 
-    const playAudioWhenReady = async () => {
-      try {
-        await audioRef.current?.play();
-        setIsPlaying(true);
-        setActiveVerseKey(verseKey);
-        currentPlayingVerseRef.current = verseKey;
-      } catch (err) {
-        console.error("Audio playback error:", err);
-      } finally {
-        isInitializingRef.current = false;
-      }
-    };
+    try {
+      // Format zero-padded numbers for direct Quran.com verse audio URL structure (e.g. 001001.mp3)
+      const paddedSurah = String(surahNum).padStart(3, '0');
+      const paddedVerse = String(verseNum).padStart(3, '0');
+      const directAudioUrl = `https://verses.quran.com/Alafasy/mp3/${paddedSurah}${paddedVerse}.mp3`;
 
-    playAudioWhenReady();
+      audioRef.current.src = directAudioUrl;
+      audioRef.current.load();
 
-    const trackTime = () => {
-      if (!audioRef.current || audioRef.current.paused) return;
-      const currentTimeMs = audioRef.current.currentTime * 1000;
+      await audioRef.current.play();
+      setIsPlaying(true);
+      setActiveVerseKey(verseKey);
+      currentPlayingVerseRef.current = verseKey;
 
-      if (endOffsetMs > 0 && currentTimeMs >= endOffsetMs) {
-        audioRef.current.pause();
+      audioRef.current.onended = () => {
         setIsPlaying(false);
         setActiveVerseKey(null);
         currentPlayingVerseRef.current = null;
-        if (animationFrameRef.current) cancelAnimationFrame(animationFrameRef.current);
-        return;
-      }
-
-      animationFrameRef.current = requestAnimationFrame(trackTime);
-    };
-
-    animationFrameRef.current = requestAnimationFrame(trackTime);
-
-    audioRef.current.onended = () => {
-      setIsPlaying(false);
-      setActiveVerseKey(null);
-      currentPlayingVerseRef.current = null;
-      if (animationFrameRef.current) cancelAnimationFrame(animationFrameRef.current);
-    };
+      };
+    } catch (err) {
+      console.error("Failed to play verse audio:", err);
+    } finally {
+      isInitializingRef.current = false;
+    }
   };
 
   // RTL Touch and Swipe handlers
