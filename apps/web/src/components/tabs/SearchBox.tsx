@@ -250,7 +250,7 @@ export const SearchBox: React.FC<SearchBoxProps> = ({
                         value={surahSearchQuery}
                         onChange={(e) => setSurahSearchQuery(e.target.value)}
                         autoFocus
-                        className="w-full px-3 py-2 pr-8 rounded-xl neu-pressed font-normal bg-transparent outline-none"
+                        className="w-full px-3 py-2 pr-8 rounded-xl neu-pressed font-normal bg-transparent outline-none text-[16px] sm:text-[14px]"
                       />
                       {surahSearchQuery && (
                         <button
@@ -329,7 +329,7 @@ export const SearchBox: React.FC<SearchBoxProps> = ({
                         value={verseSearchQuery}
                         onChange={(e) => setVerseSearchQuery(e.target.value)}
                         autoFocus
-                        className="w-full px-3 py-2 pr-8 rounded-xl neu-pressed font-normal bg-transparent outline-none"
+                        className="w-full px-3 py-2 pr-8 rounded-xl neu-pressed font-normal bg-transparent outline-none text-[16px] sm:text-[14px]"
                       />
                       {verseSearchQuery && (
                         <button
@@ -385,7 +385,7 @@ export const SearchBox: React.FC<SearchBoxProps> = ({
                     placeholder={dynamicPlaceholder}
                     value={searchInput}
                     onChange={(e) => setSearchInput(e.target.value)}
-                    className="w-full px-2.5 py-2.5 pr-6 rounded-xl neu-pressed font-normal bg-transparent outline-none truncate"
+                    className="w-full px-2.5 py-2.5 pr-6 rounded-xl neu-pressed font-normal bg-transparent outline-none truncate text-[16px] sm:text-[14px]"
                   />
                   {searchInput && (
                     <button
@@ -410,7 +410,7 @@ export const SearchBox: React.FC<SearchBoxProps> = ({
                     placeholder="Cari perkataan atau ayat..."
                     value={keywordInput}
                     onChange={(e) => setKeywordInput(e.target.value)}
-                    className="w-full px-3 py-2.5 pr-8 rounded-xl neu-pressed font-normal bg-transparent outline-none truncate"
+                    className="w-full px-3 py-2.5 pr-8 rounded-xl neu-pressed font-normal bg-transparent outline-none truncate text-[16px] sm:text-[14px]"
                   />
                   {keywordInput && (
                     <button
@@ -441,7 +441,7 @@ export const SearchBox: React.FC<SearchBoxProps> = ({
                 value={searchInput}
                 onChange={(e) => setSearchInput(e.target.value)}
                 autoFocus
-                className="w-full px-3.5 py-2.5 pr-9 rounded-xl neu-pressed font-normal bg-transparent outline-none truncate"
+                className="w-full px-3.5 py-2.5 pr-9 rounded-xl neu-pressed font-normal bg-transparent outline-none truncate text-[16px] sm:text-[14px]"
               />
               {searchInput && (
                 <button
