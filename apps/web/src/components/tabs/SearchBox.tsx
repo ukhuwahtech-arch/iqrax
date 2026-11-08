@@ -53,8 +53,11 @@ export const SearchBox: React.FC<SearchBoxProps> = ({
       const timer = setTimeout(() => {
         justOpenedRef.current = false;
       }, 300);
-      return () => clearTimeout(timer);
+      return () => {
+        clearTimeout(timer);
+      };
     }
+    return () => {};
   }, [isOpen]);
 
   useEffect(() => {
