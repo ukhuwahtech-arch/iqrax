@@ -117,32 +117,40 @@ export default function Page() {
   };
 
   const renderTabContent = () => {
-    switch (activeHeaderView) {
-      case "Iqrax":
-        return <IqraxTab />;
-      case "Quran":
-        return <QuranTab />;
-      case "Terjemahan":
-        return <TerjemahanTab />;
-      case "Tajwid":
-        return <TajwidTab />;
-      case "Waktu Solat":
-        return <WaktuSolatTab />;
-      default:
-        return <IqraxTab />;
-    }
+    const isTerjemahan = activeHeaderView === "Terjemahan";
+
+    return (
+      <div className={isTerjemahan ? "overflow-y-auto pb-8" : "h-[calc(100vh-85px)] overflow-y-auto pr-1 custom-scrollbar"}>
+        {(() => {
+          switch (activeHeaderView) {
+            case "Iqrax":
+              return <IqraxTab />;
+            case "Quran":
+              return <QuranTab />;
+            case "Terjemahan":
+              return <TerjemahanTab />;
+            case "Tajwid":
+              return <TajwidTab />;
+            case "Waktu Solat":
+              return <WaktuSolatTab />;
+            default:
+              return <IqraxTab />;
+          }
+        })()}
+      </div>
+    );
   };
 
   return (
     <main 
-      className="min-h-screen flex flex-col items-center px-4 sm:px-8 pb-8 transition-colors duration-300 relative"
-      style={{ paddingTop: '15px' }}
+      className="h-screen overflow-hidden flex flex-col items-center px-4 sm:px-8 transition-colors duration-300 relative"
+      style={{ paddingTop: '2px' }}
     >
-      <div className="max-w-xl w-full space-y-6 relative">
+      <div className="max-w-xl w-full space-y-3 relative mt-[3px] h-full flex flex-col">
         
         {/* Global Floating Header */}
         <div 
-          className={`sticky top-4 z-50 transition-all duration-500 ease-in-out backdrop-blur-md bg-transparent py-2.5 px-2 rounded-2xl ${
+          className={`sticky top-3 z-50 transition-all duration-500 ease-in-out backdrop-blur-md bg-transparent py-2 px-2 rounded-2xl shrink-0 ${
             isHeaderVisible 
               ? "opacity-100 translate-y-0 pointer-events-auto" 
               : "opacity-0 -translate-y-16 pointer-events-none"
@@ -282,7 +290,7 @@ export default function Page() {
         />
 
         {/* Dynamic Content Display */}
-        <div className="mt-4">
+        <div className="mt-2 flex-1 overflow-hidden">
           {renderTabContent()}
         </div>
 
@@ -293,7 +301,7 @@ export default function Page() {
         <button
           onClick={scrollToTop}
           aria-label="Kembali ke atas"
-          className={`fixed bottom-6 right-6 z-40 p-3.5 rounded-full neu-flat text-emerald-600 dark:text-emerald-400 shadow-xl transition-all duration-300 cursor-pointer flex items-center justify-center ${
+          className={`fixed bottom-4 right-6 z-40 p-3.5 rounded-full neu-flat text-emerald-600 dark:text-emerald-400 shadow-xl transition-all duration-300 cursor-pointer flex items-center justify-center ${
             showScrollTop
               ? "opacity-90 translate-y-0 pointer-events-auto scale-100"
               : "opacity-0 translate-y-4 pointer-events-none scale-95"

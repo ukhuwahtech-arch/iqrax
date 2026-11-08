@@ -1,3 +1,4 @@
+// C:\Users\dxiau\iqrax\apps\web\src\components\tabs\WaktuSolatTab.tsx
 "use client";
 
 import React, { useEffect, useState, useRef } from "react";
@@ -26,7 +27,7 @@ interface PrayerTimeSlot {
 
 export const WaktuSolatTab: React.FC = () => {
   const [zones, setZones] = useState<ZoneItem[]>([]);
-  const [selectedZone, setSelectedZone] = useState<string>("SGR01"); // Default to SGR01
+  const [selectedZone, setSelectedZone] = useState<string>("SGR01");
   const [prayerTimes, setPrayerTimes] = useState<PrayerDayData[]>([]);
   
   const [loadingZones, setLoadingZones] = useState<boolean>(true);
@@ -54,7 +55,7 @@ export const WaktuSolatTab: React.FC = () => {
     return () => clearInterval(timer);
   }, []);
 
-  // Load saved zone from localStorage on mount (fallback to SGR01)
+  // Load saved zone from localStorage on mount
   useEffect(() => {
     const savedZone = localStorage.getItem("jakim_zone");
     if (savedZone) {
@@ -73,7 +74,7 @@ export const WaktuSolatTab: React.FC = () => {
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
-  // 1. Fetch Zones List from JAKIM wrapper API
+  // Fetch Zones List
   useEffect(() => {
     fetch("https://api.waktusolat.online/api/zones")
       .then((res) => res.json())
@@ -87,7 +88,7 @@ export const WaktuSolatTab: React.FC = () => {
       });
   }, []);
 
-  // 2. Fetch Prayer Times whenever selectedZone changes
+  // Fetch Prayer Times
   useEffect(() => {
     if (!selectedZone) return;
 
@@ -110,7 +111,6 @@ export const WaktuSolatTab: React.FC = () => {
     localStorage.setItem("jakim_zone", selectedZone);
   }, [selectedZone]);
 
-  // Filter zones for search input suggestions
   const filteredZones = zones.filter((z) => {
     const query = zoneSearchQuery.toLowerCase();
     return (
@@ -120,14 +120,14 @@ export const WaktuSolatTab: React.FC = () => {
     );
   });
 
-  // Calculate Qibla Bearing from user's current GPS coordinates
+  // Calculate Qibla Bearing
   const calculateQibla = () => {
     if (!navigator.geolocation) {
-      setLocationStatus("Geolocation tidak disokong oleh pelayar anda.");
+      setLocationStatus("Geolocation tidak disokong.");
       return;
     }
 
-    setLocationStatus("Mengesan lokasi GPS...");
+    setLocationStatus("Mengesan GPS...");
     navigator.geolocation.getCurrentPosition(
       (position) => {
         const lat = position.coords.latitude;
@@ -147,20 +147,15 @@ export const WaktuSolatTab: React.FC = () => {
         bearing = (bearing + 360) % 360;
 
         setQiblaHeading(Math.round(bearing * 10) / 10);
-        setLocationStatus(`Lokasi berjaya dikesan (${lat.toFixed(2)}°, ${lng.toFixed(2)}°)`);
+        setLocationStatus(`Dikesan (${lat.toFixed(2)}°, ${lng.toFixed(2)}°)`);
       },
-      (error) => {
-        if (error.code === error.PERMISSION_DENIED) {
-          setLocationStatus("Permintaan GPS dibatalkan atau ditolak.");
-        } else {
-          setLocationStatus("Gagal mendapatkan lokasi GPS.");
-        }
+      () => {
+        setLocationStatus("Gagal dapatkan lokasi GPS.");
       },
       { enableHighAccuracy: true, timeout: 10000 }
     );
   };
 
-  // Format API date (e.g. "01-Nov-2026") into full month name without dashes ("01 November 2026")
   const formatFullDate = (dateStr: string) => {
     if (!dateStr) return "";
     try {
@@ -171,18 +166,9 @@ export const WaktuSolatTab: React.FC = () => {
       const year = parts[2];
 
       const monthMap: { [key: string]: string } = {
-        jan: "January",
-        feb: "February",
-        mar: "March",
-        apr: "April",
-        may: "May",
-        jun: "June",
-        jul: "July",
-        aug: "August",
-        sep: "September",
-        oct: "October",
-        nov: "November",
-        dec: "December",
+        jan: "January", feb: "February", mar: "March", apr: "April",
+        may: "May", jun: "June", jul: "July", aug: "August",
+        sep: "September", oct: "October", nov: "November", dec: "December",
       };
 
       const fullMonth = monthMap[monthAbbr || ""] || parts[1];
@@ -192,7 +178,6 @@ export const WaktuSolatTab: React.FC = () => {
     }
   };
 
-  // Find today's prayer schedule matching API date format
   const getTodayFormattedApi = () => {
     const d = new Date();
     const day = String(d.getDate()).padStart(2, "0");
@@ -204,10 +189,8 @@ export const WaktuSolatTab: React.FC = () => {
 
   const todayStrApi = getTodayFormattedApi();
   const todayPrayer = prayerTimes.find((p) => p.date.toLowerCase() === todayStrApi.toLowerCase()) || prayerTimes[0];
-
   const currentZoneObj = zones.find((z) => z.jakimCode === selectedZone);
 
-  // Helper to normalize any time format into clean AM/PM and calculate minutes
   const formatToAmPm = (timeStr: string) => {
     if (!timeStr) return { display: "-", minutes: 0 };
     try {
@@ -232,15 +215,12 @@ export const WaktuSolatTab: React.FC = () => {
       const ampm = hours >= 12 ? "PM" : "AM";
       let displayH = hours % 12;
       displayH = displayH ? displayH : 12;
-      const formattedDisplay = `${String(displayH).padStart(2, "0")}:${String(minutes).padStart(2, "0")} ${ampm}`;
-
-      return { display: formattedDisplay, minutes: totalMins };
+      return { display: `${String(displayH).padStart(2, "0")}:${String(minutes).padStart(2, "0")} ${ampm}`, minutes: totalMins };
     } catch {
       return { display: timeStr, minutes: 0 };
     }
   };
 
-  // Estimate Imsak (-10 mins before Fajr)
   const getImsakTime = (fajrStr: string) => {
     const res = formatToAmPm(fajrStr);
     const imsakMins = res.minutes - 10;
@@ -263,54 +243,43 @@ export const WaktuSolatTab: React.FC = () => {
   const maghribData = formatToAmPm(todayPrayer?.maghrib || "");
   const ishaData = formatToAmPm(todayPrayer?.isha || "");
 
-  const slots: PrayerTimeSlot[] = todayPrayer ? [
-    { name: "Imsak", timeStr: imsakData.display, timeInMinutes: imsakData.minutes },
-    { name: "Subuh", timeStr: subuhData.display, timeInMinutes: subuhData.minutes },
-    { name: "Syuruk", timeStr: syurukData.display, timeInMinutes: syurukData.minutes },
-    { name: "Zohor", timeStr: zohorData.display, timeInMinutes: zohorData.minutes },
-    { name: "Asar", timeStr: asrData.display, timeInMinutes: asrData.minutes },
-    { name: "Maghrib", timeStr: maghribData.display, timeInMinutes: maghribData.minutes },
-    { name: "Isyak", timeStr: ishaData.display, timeInMinutes: ishaData.minutes },
-  ] : [];
+  const slotsMap: { [key: string]: PrayerTimeSlot } = todayPrayer ? {
+    Imsak: { name: "Imsak", timeStr: imsakData.display, timeInMinutes: imsakData.minutes },
+    Subuh: { name: "Subuh", timeStr: subuhData.display, timeInMinutes: subuhData.minutes },
+    Syuruk: { name: "Syuruk", timeStr: syurukData.display, timeInMinutes: syurukData.minutes },
+    Zohor: { name: "Zohor", timeStr: zohorData.display, timeInMinutes: zohorData.minutes },
+    Asar: { name: "Asar", timeStr: asrData.display, timeInMinutes: asrData.minutes },
+    Maghrib: { name: "Maghrib", timeStr: maghribData.display, timeInMinutes: maghribData.minutes },
+    Isyak: { name: "Isyak", timeStr: ishaData.display, timeInMinutes: ishaData.minutes },
+  } : {};
 
-  // Determine active slot index
-  let activeIndex = slots.findIndex((slot) => currentTimeMinutes < slot.timeInMinutes);
-  if (activeIndex === -1 && slots.length > 0) activeIndex = 0;
+  const leftColumnNames = ["Imsak", "Subuh", "Syuruk", "Zohor", "Asar"];
+  const rightTopNames = ["Maghrib", "Isyak"];
 
-  const activeSlot = slots[activeIndex];
-  const diffMinutes = activeSlot ? activeSlot.timeInMinutes - currentTimeMinutes : 0;
-
-  const formatCountdown = (diff: number) => {
-    if (diff <= 0) return "Sedang berlangsung";
-    const h = Math.floor(diff / 60);
-    const m = diff % 60;
-    if (h > 0) {
-      return `${h} jam ${m} minit lagi`;
-    }
-    return `${m} minit lagi`;
-  };
+  const allSlotsArray = Object.values(slotsMap);
+  let activeIndex = allSlotsArray.findIndex((slot) => currentTimeMinutes < slot.timeInMinutes);
+  if (activeIndex === -1 && allSlotsArray.length > 0) activeIndex = 0;
 
   return (
-    <div className="space-y-6 animate-fade-in pb-12 relative">
+    <div className="space-y-4 animate-fade-in pb-12 relative text-sm">
       {/* Header & Searchable Zone Selector Card */}
-      <div className="p-6 rounded-2xl neu-flat space-y-4">
+      <div className="p-4 rounded-2xl neu-flat space-y-3">
         <div className="flex items-center justify-between">
-          <h2 className="text-xl font-bold">Waktu Solat & Kiblat</h2>
-          <span className="text-xs font-semibold px-3 py-1.5 rounded-xl neu-pressed text-emerald-600 dark:text-emerald-400">
+          <h2 className="text-base font-bold">Zon</h2>
+          <span className="text-xs font-semibold px-3 py-1 rounded-xl neu-pressed text-emerald-600 dark:text-emerald-400">
             {currentZoneObj ? `${currentZoneObj.negeri} (${currentZoneObj.jakimCode})` : `Selangor (${selectedZone})`}
           </span>
         </div>
 
-        {/* Searchable Zone Dropdown with Typing Suggestions */}
+        {/* Searchable Zone Dropdown */}
         <div className="space-y-1 relative" ref={zoneMenuRef}>
-          <label className="text-xs font-semibold opacity-70">Pilih / Taip Zon atau Daerah</label>
           <button
             onClick={() => {
               setZoneDropdownOpen(!zoneDropdownOpen);
               setZoneSearchQuery("");
             }}
             disabled={loadingZones}
-            className="w-full px-4 py-3 rounded-xl neu-pressed text-xs font-semibold flex items-center justify-between cursor-pointer disabled:opacity-50"
+            className="w-full px-3 py-2.5 rounded-xl neu-pressed text-xs font-semibold flex items-center justify-between cursor-pointer disabled:opacity-50"
           >
             <span className="truncate pr-2 text-left">
               {currentZoneObj
@@ -328,7 +297,7 @@ export const WaktuSolatTab: React.FC = () => {
                 value={zoneSearchQuery}
                 onChange={(e) => setZoneSearchQuery(e.target.value)}
                 autoFocus
-                className="w-full px-3 py-2.5 rounded-xl neu-pressed text-xs font-semibold bg-transparent outline-none"
+                className="w-full px-3 py-2 rounded-xl neu-pressed text-xs font-semibold bg-transparent outline-none"
               />
 
               <div className="max-h-60 overflow-y-auto space-y-1 pr-1">
@@ -341,7 +310,7 @@ export const WaktuSolatTab: React.FC = () => {
                         setZoneDropdownOpen(false);
                         setZoneSearchQuery("");
                       }}
-                      className={`w-full text-left px-3 py-2.5 text-xs rounded-xl transition-colors cursor-pointer flex flex-col gap-0.5 ${
+                      className={`w-full text-left px-3 py-2 text-xs rounded-xl transition-colors cursor-pointer flex flex-col gap-0.5 ${
                         selectedZone === z.jakimCode
                           ? "neu-pressed text-emerald-600 dark:text-emerald-400 font-bold"
                           : "hover:bg-black/5 dark:hover:bg-white/5 opacity-80"
@@ -350,11 +319,11 @@ export const WaktuSolatTab: React.FC = () => {
                       <div className="flex justify-between font-bold">
                         <span>{z.negeri} - {z.daerah}</span>
                       </div>
-                      <div className="opacity-75 text-[11px] truncate">Kod Zon: {z.jakimCode}</div>
+                      <div className="opacity-75 text-xs truncate">Kod Zon: {z.jakimCode}</div>
                     </button>
                   ))
                 ) : (
-                  <div className="text-center py-4 text-xs opacity-50">
+                  <div className="text-center py-3 text-xs opacity-50">
                     Tiada zon dijumpai
                   </div>
                 )}
@@ -364,92 +333,109 @@ export const WaktuSolatTab: React.FC = () => {
         </div>
       </div>
 
-      {/* Today's Highlighted Prayer Box */}
+      {/* Prayer Times & Compass Structured Grid (2 columns, 5 rows) */}
       {loadingTimes ? (
-        <div className="p-8 rounded-2xl neu-pressed text-center text-sm opacity-75">
+        <div className="p-6 rounded-2xl neu-pressed text-center text-xs opacity-75">
           Memuatkan waktu solat...
         </div>
       ) : todayPrayer ? (
-        <div className="p-6 rounded-2xl neu-flat space-y-4">
-          <div className="flex items-center justify-between border-b border-black/5 dark:border-white/5 pb-3">
+        <div className="p-4 rounded-2xl neu-flat space-y-3">
+          <div className="flex items-center justify-between border-b border-black/5 dark:border-white/5 pb-2">
             <div>
-              <h3 className="text-sm font-bold text-emerald-600 dark:text-emerald-400">Waktu Solat</h3>
+              <h3 className="text-xs font-bold text-emerald-600 dark:text-emerald-400">Jadual Waktu Solat</h3>
               <p className="text-xs opacity-75">{formatFullDate(todayPrayer.date)}</p>
             </div>
           </div>
 
-          <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-            {slots.map((item, idx) => {
-              const isCurrentActive = idx === activeIndex;
+          <div className="grid grid-cols-2 gap-2.5">
+            {/* Left Column (5 rows) */}
+            <div className="space-y-2.5">
+              {leftColumnNames.map((name) => {
+                const item = slotsMap[name];
+                if (!item) return null;
+                const isCurrentActive = allSlotsArray.findIndex((s) => s.name === item.name) === activeIndex;
+                const diff = item.timeInMinutes - currentTimeMinutes;
 
-              return (
-                <div 
-                  key={idx} 
-                  className={`p-3.5 rounded-xl flex flex-col items-center justify-center text-center space-y-1 transition-all ${
-                    isCurrentActive ? "neu-pressed text-emerald-600 dark:text-emerald-400 shadow-inner scale-[0.98]" : "neu-flat opacity-85"
-                  }`}
-                >
-                  <span className="text-xs font-semibold">{item.name}</span>
-                  <span className="text-sm sm:text-base font-bold">
-                    {item.timeStr}
-                  </span>
-                  {isCurrentActive && (
-                    <span className="text-[10px] opacity-75 font-medium leading-tight">
-                      {formatCountdown(diffMinutes)}
-                    </span>
-                  )}
+                return (
+                  <div 
+                    key={name} 
+                    className={`h-16 rounded-xl flex flex-col items-center justify-center text-center space-y-0.5 transition-all ${
+                      isCurrentActive ? "neu-pressed text-emerald-600 dark:text-emerald-400 shadow-inner scale-[0.98]" : "neu-flat opacity-85"
+                    }`}
+                  >
+                    <span className="text-xs font-semibold">{item.name}</span>
+                    <span className="text-sm font-bold">{item.timeStr}</span>
+                    {isCurrentActive && (
+                      <span className="text-[10px] opacity-75 font-medium leading-tight">
+                        {diff <= 0 ? "Berlangsung" : `${Math.floor(diff / 60) > 0 ? `${Math.floor(diff / 60)}j ` : ""}${diff % 60}m lagi`}
+                      </span>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+
+            {/* Right Column (Maghrib, Isyak, and Merged Compass spanning 3 rows) */}
+            <div className="space-y-2.5 flex flex-col">
+              {rightTopNames.map((name) => {
+                const item = slotsMap[name];
+                if (!item) return null;
+                const isCurrentActive = allSlotsArray.findIndex((s) => s.name === item.name) === activeIndex;
+                const diff = item.timeInMinutes - currentTimeMinutes;
+
+                return (
+                  <div 
+                    key={name} 
+                    className={`h-16 rounded-xl flex flex-col items-center justify-center text-center space-y-0.5 transition-all ${
+                      isCurrentActive ? "neu-pressed text-emerald-600 dark:text-emerald-400 shadow-inner scale-[0.98]" : "neu-flat opacity-85"
+                    }`}
+                  >
+                    <span className="text-xs font-semibold">{item.name}</span>
+                    <span className="text-sm font-bold">{item.timeStr}</span>
+                    {isCurrentActive && (
+                      <span className="text-[10px] opacity-75 font-medium leading-tight">
+                        {diff <= 0 ? "Berlangsung" : `${Math.floor(diff / 60) > 0 ? `${Math.floor(diff / 60)}j ` : ""}${diff % 60}m lagi`}
+                      </span>
+                    )}
+                  </div>
+                );
+              })}
+
+              {/* Merged Qibla Compass Card spanning the remaining 3 rows height */}
+              <div className="flex-1 min-h-[162px] rounded-xl neu-flat flex flex-col items-center justify-center text-center p-3 space-y-2">
+                <span className="text-xs font-bold text-emerald-600 dark:text-emerald-400">Arah Kiblat</span>
+                <div className="relative w-12 h-12 rounded-full neu-pressed flex items-center justify-center shadow-inner">
+                  <div 
+                    className="absolute w-full h-full flex items-center justify-center transition-transform duration-700 ease-out"
+                    style={{ transform: `rotate(${qiblaHeading !== null ? qiblaHeading : 0}deg)` }}
+                  >
+                    <div className="w-1.5 h-8 bg-emerald-600 dark:bg-emerald-400 rounded-full absolute top-1 shadow-sm"></div>
+                  </div>
+                  <div className="w-1.5 h-1.5 bg-gray-500 rounded-full z-10"></div>
                 </div>
-              );
-            })}
+                <button
+                  onClick={calculateQibla}
+                  className="w-full py-1.5 px-2 rounded-lg neu-flat text-xs font-bold text-emerald-600 dark:text-emerald-400 hover:opacity-80 transition-opacity cursor-pointer truncate"
+                  title={locationStatus}
+                >
+                  {qiblaHeading !== null ? `${qiblaHeading}°` : "Kira GPS"}
+                </button>
+              </div>
+            </div>
           </div>
 
           {/* Attribution Note */}
-          <div className="pt-2 border-t border-black/5 dark:border-white/5 text-center">
-            <p className="text-[11px] opacity-65 leading-relaxed">
+          <div className="pt-1.5 border-t border-black/5 dark:border-white/5 text-center">
+            <p className="text-xs opacity-65 leading-relaxed">
               Sumber data rasmi diperolehi terus daripada portal e-Solat Jabatan Kemajuan Islam Malaysia (JAKIM).
             </p>
           </div>
         </div>
       ) : (
-        <div className="p-6 rounded-2xl neu-pressed text-center text-xs opacity-75">
+        <div className="p-4 rounded-2xl neu-pressed text-center text-xs opacity-75">
           Tiada data waktu solat dijumpai untuk zon ini.
         </div>
       )}
-
-      {/* Qibla Compass Card */}
-      <div className="p-6 rounded-2xl neu-flat space-y-4 text-center">
-        <h3 className="text-sm font-bold text-left">Kompas Arah Kiblat</h3>
-        <p className="text-xs opacity-75 text-left">{locationStatus}</p>
-
-        <div className="flex flex-col items-center justify-center py-4">
-          <div className="relative w-40 h-40 rounded-full neu-pressed flex items-center justify-center shadow-inner">
-            <div 
-              className="absolute w-full h-full flex items-center justify-center transition-transform duration-700 ease-out"
-              style={{ transform: `rotate(${qiblaHeading !== null ? qiblaHeading : 0}deg)` }}
-            >
-              <div className="w-2 h-16 bg-emerald-600 dark:bg-emerald-400 rounded-full absolute top-3 shadow-md flex items-start justify-center pt-1">
-                <span className="text-[9px] font-black text-white">Kaabah</span>
-              </div>
-            </div>
-            <div className="w-3 h-3 bg-gray-500 rounded-full z-10"></div>
-          </div>
-        </div>
-
-        <div className="flex items-center justify-between pt-2">
-          <div className="text-xs text-left">
-            <span>Sudut Kiblat: </span>
-            <strong className="text-emerald-600 dark:text-emerald-400 font-bold">
-              {qiblaHeading !== null ? `${qiblaHeading}° dari Utara` : "Belum dihitung"}
-            </strong>
-          </div>
-          <button
-            onClick={calculateQibla}
-            className="px-4 py-2.5 rounded-xl neu-flat text-xs font-bold text-emerald-600 dark:text-emerald-400 hover:opacity-80 transition-opacity cursor-pointer"
-          >
-            Kira Arah Kiblat GPS
-          </button>
-        </div>
-      </div>
     </div>
   );
 };
