@@ -75,7 +75,6 @@ export const SearchBox: React.FC<SearchBoxProps> = ({
     const handleWindowScroll = () => {
       if (isOpen) {
         const scrollDelta = Math.abs(window.scrollY - initialScrollYRef.current);
-        // If user scrolls down or up by more than 30px, collapse the search box
         if (scrollDelta > 30) {
           onClose();
         }
@@ -88,9 +87,9 @@ export const SearchBox: React.FC<SearchBoxProps> = ({
     };
   }, [isOpen, onClose]);
 
-  // Handle click outside or inside the search box
+  // Robust click outside handler for mobile & desktop
   useEffect(() => {
-    function handleClickOutside(event: MouseEvent) {
+    function handleClickOutside(event: MouseEvent | TouchEvent) {
       if (containerRef.current) {
         if (!containerRef.current.contains(event.target as Node)) {
           onClose();
@@ -105,9 +104,11 @@ export const SearchBox: React.FC<SearchBoxProps> = ({
     }
     if (isOpen) {
       document.addEventListener("mousedown", handleClickOutside);
+      document.addEventListener("touchstart", handleClickOutside);
     }
     return () => {
       document.removeEventListener("mousedown", handleClickOutside);
+      document.removeEventListener("touchstart", handleClickOutside);
     };
   }, [isOpen, onClose]);
 
@@ -242,7 +243,10 @@ export const SearchBox: React.FC<SearchBoxProps> = ({
                 </button>
 
                 {surahDropdownOpen && (
-                  <div className="absolute left-0 mt-2 w-64 sm:w-72 rounded-2xl neu-flat p-3 z-50 shadow-2xl bg-white dark:bg-[#1e1e24] space-y-2 transition-all duration-300 ease-out transform origin-top font-poppins font-normal text-[14px]">
+                  <div 
+                    onClick={(e) => e.stopPropagation()}
+                    className="absolute left-0 mt-2 w-64 sm:w-72 rounded-2xl neu-flat p-3 z-50 shadow-2xl bg-white dark:bg-[#1e1e24] space-y-2 transition-all duration-300 ease-out transform origin-top font-poppins font-normal text-[14px]"
+                  >
                     <div className="relative w-full">
                       <input
                         type="text"
@@ -321,7 +325,10 @@ export const SearchBox: React.FC<SearchBoxProps> = ({
                 </button>
 
                 {verseDropdownOpen && (
-                  <div className="absolute left-0 mt-2 w-48 sm:w-56 rounded-2xl neu-flat p-3 z-50 shadow-2xl bg-white dark:bg-[#1e1e24] space-y-2 transition-all duration-300 ease-out transform origin-top font-poppins font-normal text-[14px]">
+                  <div 
+                    onClick={(e) => e.stopPropagation()}
+                    className="absolute left-0 mt-2 w-48 sm:w-56 rounded-2xl neu-flat p-3 z-50 shadow-2xl bg-white dark:bg-[#1e1e24] space-y-2 transition-all duration-300 ease-out transform origin-top font-poppins font-normal text-[14px]"
+                  >
                     <div className="relative w-full">
                       <input
                         type="text"

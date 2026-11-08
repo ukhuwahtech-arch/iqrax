@@ -171,7 +171,7 @@ export const QuranTab: React.FC<QuranTabProps> = ({
     return false;
   };
 
-  // Audio Playback Handler for whole-verse playback & highlighting
+  // Audio Playback Handler with precise edge-caching & timing sync
   const handleVerseClick = async (verseKey: string) => {
     if (!audioRef.current || isInitializingRef.current) return;
 
@@ -209,20 +209,23 @@ export const QuranTab: React.FC<QuranTabProps> = ({
     }
 
     audioRef.current.pause();
-    audioRef.current.currentTime = startOffsetMs / 1000;
+    // Precise floating-point time positioning with a slight safety buffer
+    audioRef.current.currentTime = Math.max(0, startOffsetMs / 1000 - 0.05);
 
-    audioRef.current
-      .play()
-      .then(() => {
+    const playAudioWhenReady = async () => {
+      try {
+        await audioRef.current?.play();
         setIsPlaying(true);
         setActiveVerseKey(verseKey);
         currentPlayingVerseRef.current = verseKey;
-        isInitializingRef.current = false;
-      })
-      .catch((err) => {
+      } catch (err) {
         console.error("Audio playback error:", err);
+      } finally {
         isInitializingRef.current = false;
-      });
+      }
+    };
+
+    playAudioWhenReady();
 
     const trackTime = () => {
       if (!audioRef.current || audioRef.current.paused) return;
@@ -230,7 +233,6 @@ export const QuranTab: React.FC<QuranTabProps> = ({
 
       if (endOffsetMs > 0 && currentTimeMs >= endOffsetMs) {
         audioRef.current.pause();
-        audioRef.current.currentTime = endOffsetMs / 1000;
         setIsPlaying(false);
         setActiveVerseKey(null);
         currentPlayingVerseRef.current = null;
