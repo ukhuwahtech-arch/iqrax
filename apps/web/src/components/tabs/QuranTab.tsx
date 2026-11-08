@@ -9,7 +9,17 @@ interface VerseTimestamp {
   segments: number[][];
 }
 
-export const QuranTab: React.FC = () => {
+interface QuranTabProps {
+  selectedSurah?: number | "all";
+  selectedVerse?: string;
+  keyword?: string;
+}
+
+export const QuranTab: React.FC<QuranTabProps> = ({
+  selectedSurah = 1,
+  selectedVerse = "all",
+  keyword = "",
+}) => {
   const [selectedPage, setSelectedPage] = useState<number>(1);
   const [pageData, setPageData] = useState<any>(null);
   const [loading, setLoading] = useState<boolean>(true);
@@ -30,6 +40,24 @@ export const QuranTab: React.FC = () => {
   const touchStartXRef = useRef<number>(0);
   const touchEndXRef = useRef<number>(0);
 
+  // Helper to determine Juzuk number (1 to 30) based on Madani Mushaf page number (1 to 604)
+  const getJuzukNumber = (page: number): number => {
+    if (page <= 21) return 1;
+    const juzuk = Math.floor((page - 22) / 20) + 2;
+    return Math.min(juzuk, 30);
+  };
+
+  // Map Surah / Verse selection to Quran page index if updated from Search Box
+  useEffect(() => {
+    if (selectedSurah && selectedSurah !== "all") {
+      const chapterPages: Record<number, number> = {
+        1: 1, 2: 2, 3: 50, 4: 77, 5: 106, 6: 128, 7: 151, 8: 177, 9: 187, 10: 208,
+      };
+      const targetPage = chapterPages[selectedSurah as number] || 1;
+      setSelectedPage(targetPage);
+    }
+  }, [selectedSurah, selectedVerse]);
+
   // Initialize global Audio instance on mount
   useEffect(() => {
     if (!audioRef.current) {
@@ -45,7 +73,7 @@ export const QuranTab: React.FC = () => {
     };
   }, []);
 
-  // Dynamic Font Injector mapping to public/fonts-woff2/ directory
+  // Dynamic Font Injector mapping for Mushaf page font
   useEffect(() => {
     const paddedPage = String(selectedPage).padStart(3, '0');
     const fontName = `QCF4_Hafs_${paddedPage}`;
@@ -223,7 +251,7 @@ export const QuranTab: React.FC = () => {
     };
   };
 
-  // Touch and Swipe handlers
+  // RTL Touch and Swipe handlers
   const handleTouchStart = (e: React.TouchEvent) => {
     touchStartXRef.current = e.targetTouches[0]?.clientX || 0;
   };
@@ -238,8 +266,10 @@ export const QuranTab: React.FC = () => {
     const minSwipeDistance = 50;
 
     if (distance > minSwipeDistance) {
+      // Swiped Left -> Arabic next page
       setSelectedPage((prev) => Math.min(prev + 1, 604));
     } else if (distance < -minSwipeDistance) {
+      // Swiped Right -> Arabic previous page
       setSelectedPage((prev) => Math.max(prev - 1, 1));
     }
 
@@ -276,29 +306,42 @@ export const QuranTab: React.FC = () => {
         </div>
       )}
 
-      {/* Compact Navigation Bar */}
-      <div className="-mt-[13px] flex justify-center select-none gap-4 items-center">
-        <button
-          onClick={() => setSelectedPage((prev) => Math.max(prev - 1, 1))}
-          disabled={selectedPage <= 1}
-          aria-label="Halaman Sebelumnya"
-          className="neu-flat w-8 h-8 rounded-full flex items-center justify-center text-emerald-600 dark:text-emerald-400 border border-amber-900/10 shadow-sm disabled:opacity-30 cursor-pointer hover:opacity-85 transition-opacity"
-        >
-          <img src="/icons/prev.svg" alt="Prev" className="w-3.5 h-3.5 emerald-icon" />
-        </button>
-
-        <div className="neu-flat w-8 h-8 rounded-full flex items-center justify-center text-xs font-sans font-medium text-emerald-600 dark:text-emerald-400 border border-amber-900/10 shadow-sm">
-          {selectedPage}
+      {/* Navigation Bar with Juzuk on far left edge and centered page controls */}
+      <div className="-mt-[13px] relative flex items-center justify-between select-none max-w-4xl mx-auto px-2">
+        {/* Juzuk Display on the left edge */}
+        <div className="neu-flat px-3 h-8 rounded-xl flex items-center justify-center text-xs font-sans font-medium text-emerald-600 dark:text-emerald-400 border border-amber-900/10 shadow-sm shrink-0">
+          Juzuk {getJuzukNumber(selectedPage)}
         </div>
 
-        <button
-          onClick={() => setSelectedPage((prev) => Math.min(prev + 1, 604))}
-          disabled={selectedPage >= 604}
-          aria-label="Halaman Seterusnya"
-          className="neu-flat w-8 h-8 rounded-full flex items-center justify-center text-emerald-600 dark:text-emerald-400 border border-amber-900/10 shadow-sm disabled:opacity-30 cursor-pointer hover:opacity-85 transition-opacity"
-        >
-          <img src="/icons/next.svg" alt="Next" className="w-3.5 h-3.5 emerald-icon" />
-        </button>
+        {/* Centered Page Navigation Controls (prev.svg on left, next.svg on right) */}
+        <div className="absolute left-1/2 -translate-x-1/2 flex items-center gap-4">
+          {/* Left Button (Uses prev.svg) */}
+          <button
+            onClick={() => setSelectedPage((prev) => Math.min(prev + 1, 604))}
+            disabled={selectedPage >= 604}
+            aria-label="Halaman Seterusnya"
+            className="neu-flat w-8 h-8 rounded-full flex items-center justify-center text-emerald-600 dark:text-emerald-400 border border-amber-900/10 shadow-sm disabled:opacity-30 cursor-pointer hover:opacity-85 transition-opacity"
+          >
+            <img src="/icons/prev.svg" alt="Next" className="w-3.5 h-3.5 emerald-icon" />
+          </button>
+
+          <span className="text-sm font-sans font-semibold text-emerald-600 dark:text-emerald-400 px-1 select-none">
+            {selectedPage}
+          </span>
+
+          {/* Right Button (Uses next.svg) */}
+          <button
+            onClick={() => setSelectedPage((prev) => Math.max(prev - 1, 1))}
+            disabled={selectedPage <= 1}
+            aria-label="Halaman Sebelumnya"
+            className="neu-flat w-8 h-8 rounded-full flex items-center justify-center text-emerald-600 dark:text-emerald-400 border border-amber-900/10 shadow-sm disabled:opacity-30 cursor-pointer hover:opacity-85 transition-opacity"
+          >
+            <img src="/icons/next.svg" alt="Prev" className="w-3.5 h-3.5 emerald-icon" />
+          </button>
+        </div>
+
+        {/* Spacer to balance flex layout */}
+        <div className="w-[72px] shrink-0" />
       </div>
     </div>
   );
