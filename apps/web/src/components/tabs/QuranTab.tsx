@@ -276,8 +276,8 @@ export const QuranTab: React.FC = () => {
         </div>
       )}
 
-      {/* Compact Navigation Bar using the exact small circle design style */}
-      <div className="mt-3 flex justify-center select-none gap-4 items-center">
+      {/* Compact Navigation Bar */}
+      <div className="-mt-[13px] flex justify-center select-none gap-4 items-center">
         <button
           onClick={() => setSelectedPage((prev) => Math.max(prev - 1, 1))}
           disabled={selectedPage <= 1}
@@ -287,7 +287,7 @@ export const QuranTab: React.FC = () => {
           <img src="/icons/prev.svg" alt="Prev" className="w-3.5 h-3.5 emerald-icon" />
         </button>
 
-        <div className="neu-flat w-8 h-8 rounded-full flex items-center justify-center text-xs font-sans font-medium text-amber-900/80 dark:text-amber-100/70 border border-amber-900/10 shadow-sm">
+        <div className="neu-flat w-8 h-8 rounded-full flex items-center justify-center text-xs font-sans font-medium text-emerald-600 dark:text-emerald-400 border border-amber-900/10 shadow-sm">
           {selectedPage}
         </div>
 

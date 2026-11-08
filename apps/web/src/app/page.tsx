@@ -120,7 +120,7 @@ export default function Page() {
     const isTerjemahan = activeHeaderView === "Terjemahan";
 
     return (
-      <div className={isTerjemahan ? "overflow-y-auto pb-8" : "h-[calc(100vh-85px)] overflow-y-auto pr-1 custom-scrollbar"}>
+      <div className={isTerjemahan ? "h-auto overflow-visible pb-12" : "h-[calc(100vh-85px)] overflow-y-auto pr-1 custom-scrollbar"}>
         {(() => {
           switch (activeHeaderView) {
             case "Iqrax":
@@ -143,7 +143,9 @@ export default function Page() {
 
   return (
     <main 
-      className="h-screen overflow-hidden flex flex-col items-center px-4 sm:px-8 transition-colors duration-300 relative"
+      className={`flex flex-col items-center px-4 sm:px-8 transition-colors duration-300 relative ${
+        activeHeaderView === "Terjemahan" ? "min-h-screen overflow-y-auto" : "h-screen overflow-hidden"
+      }`}
       style={{ paddingTop: '2px' }}
     >
       <div className="max-w-xl w-full space-y-3 relative mt-[3px] h-full flex flex-col">
@@ -168,7 +170,7 @@ export default function Page() {
               >
                 <Image src="/icons/iqrax.svg" alt="Iqrax" width={20} height={20} className="w-5 h-5 opacity-80 dark:invert" />
               </button>
-              <span className="text-[10px] font-bold mt-0.5 text-amber-900/80 dark:text-amber-100/70 select-none">
+              <span className="text-[10px] font-sans font-medium mt-0.5 text-emerald-600 dark:text-emerald-400 select-none">
                 Iqra<span className="text-[7px] align-super">x</span>
               </span>
             </div>
@@ -183,7 +185,7 @@ export default function Page() {
               >
                 <Image src="/icons/quran.svg" alt="Quran" width={20} height={20} className="w-5 h-5 opacity-80 dark:invert" />
               </button>
-              <span className="text-[10px] font-bold mt-0.5 text-amber-900/80 dark:text-amber-100/70 select-none">Quran</span>
+              <span className="text-[10px] font-sans font-medium mt-0.5 text-emerald-600 dark:text-emerald-400 select-none">Quran</span>
             </div>
 
             {/* 3. Terjemahan */}
@@ -196,7 +198,7 @@ export default function Page() {
               >
                 <Image src="/icons/terjemahan.svg" alt="Terjemahan" width={20} height={20} className="w-5 h-5 opacity-80 dark:invert" />
               </button>
-              <span className="text-[10px] font-bold mt-0.5 text-amber-900/80 dark:text-amber-100/70 select-none">Terjemahan</span>
+              <span className="text-[10px] font-sans font-medium mt-0.5 text-emerald-600 dark:text-emerald-400 select-none">Terjemahan</span>
             </div>
 
             {/* 4. Tajwid */}
@@ -209,7 +211,7 @@ export default function Page() {
               >
                 <Image src="/icons/tajwid.svg" alt="Tajwid" width={20} height={20} className="w-5 h-5 opacity-80 dark:invert" />
               </button>
-              <span className="text-[10px] font-bold mt-0.5 text-amber-900/80 dark:text-amber-100/70 select-none">Tajwid</span>
+              <span className="text-[10px] font-sans font-medium mt-0.5 text-emerald-600 dark:text-emerald-400 select-none">Tajwid</span>
             </div>
 
             {/* 5. Waktu Solat */}
@@ -222,7 +224,7 @@ export default function Page() {
               >
                 <Image src="/icons/waktu-solat.svg" alt="Solat" width={20} height={20} className="w-5 h-5 opacity-80 dark:invert" />
               </button>
-              <span className="text-[10px] font-bold mt-0.5 text-amber-900/80 dark:text-amber-100/70 select-none">Solat</span>
+              <span className="text-[10px] font-sans font-medium mt-0.5 text-emerald-600 dark:text-emerald-400 select-none">Solat</span>
             </div>
 
             {/* 6. Carian (Toggles SearchBox) */}
@@ -241,7 +243,7 @@ export default function Page() {
                   <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
                 </svg>
               </button>
-              <span className="text-[10px] font-bold mt-0.5 text-amber-900/80 dark:text-amber-100/70 select-none">Carian</span>
+              <span className="text-[10px] font-sans font-medium mt-0.5 text-emerald-600 dark:text-emerald-400 select-none">Carian</span>
             </div>
 
             {/* 7. 3-Dot Options */}
@@ -255,7 +257,7 @@ export default function Page() {
                   <path strokeLinecap="round" strokeLinejoin="round" d="M12 6.75a.75.75 0 110-1.5.75.75 0 010 1.5zM12 12.75a.75.75 0 110-1.5.75.75 0 010 1.5zM12 18.75a.75.75 0 110-1.5.75.75 0 010 1.5z" />
                 </svg>
               </button>
-              <span className="text-[10px] font-bold mt-0.5 text-transparent select-none">.</span>
+              <span className="text-[10px] font-sans font-medium mt-0.5 text-transparent select-none">.</span>
 
               {menuOpen && (
                 <div className="absolute right-0 mt-3 w-48 rounded-2xl neu-flat p-2 z-50 bg-white dark:bg-[#1e1e24] shadow-xl">

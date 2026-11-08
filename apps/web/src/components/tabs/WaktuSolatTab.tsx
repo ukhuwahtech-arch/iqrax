@@ -263,10 +263,10 @@ export const WaktuSolatTab: React.FC = () => {
   return (
     <div className="space-y-4 animate-fade-in pb-12 relative text-sm">
       {/* Header & Searchable Zone Selector Card */}
-      <div className="p-4 rounded-2xl neu-flat space-y-3">
+      <div className="p-4 rounded-3xl neu-pressed space-y-3">
         <div className="flex items-center justify-between">
           <h2 className="text-base font-bold">Zon</h2>
-          <span className="text-xs font-semibold px-3 py-1 rounded-xl neu-pressed text-emerald-600 dark:text-emerald-400">
+          <span className="text-xs font-semibold px-3 py-1 rounded-2xl neu-flat text-emerald-600 dark:text-emerald-400">
             {currentZoneObj ? `${currentZoneObj.negeri} (${currentZoneObj.jakimCode})` : `Selangor (${selectedZone})`}
           </span>
         </div>
@@ -279,7 +279,7 @@ export const WaktuSolatTab: React.FC = () => {
               setZoneSearchQuery("");
             }}
             disabled={loadingZones}
-            className="w-full px-3 py-2.5 rounded-xl neu-pressed text-xs font-semibold flex items-center justify-between cursor-pointer disabled:opacity-50"
+            className="w-full px-3.5 py-2.5 rounded-2xl neu-flat text-xs font-semibold flex items-center justify-between cursor-pointer disabled:opacity-50"
           >
             <span className="truncate pr-2 text-left">
               {currentZoneObj
@@ -290,17 +290,17 @@ export const WaktuSolatTab: React.FC = () => {
           </button>
 
           {zoneDropdownOpen && (
-            <div className="absolute left-0 right-0 mt-2 rounded-2xl neu-flat p-3 z-50 shadow-2xl bg-white dark:bg-[#1e1e24] space-y-2">
+            <div className="absolute left-0 right-0 mt-2 rounded-3xl neu-flat p-3 z-50 shadow-2xl bg-white dark:bg-[#1e1e24] space-y-2">
               <input
                 type="text"
                 placeholder="Taip untuk cari (cth: Selangor, Gombak)..."
                 value={zoneSearchQuery}
                 onChange={(e) => setZoneSearchQuery(e.target.value)}
                 autoFocus
-                className="w-full px-3 py-2 rounded-xl neu-pressed text-xs font-semibold bg-transparent outline-none"
+                className="w-full px-3 py-2 rounded-2xl neu-pressed text-xs font-semibold bg-transparent outline-none"
               />
 
-              <div className="max-h-60 overflow-y-auto space-y-1 pr-1">
+              <div className="max-h-60 overflow-y-auto space-y-1 pr-1 custom-scrollbar">
                 {filteredZones.length > 0 ? (
                   filteredZones.map((z) => (
                     <button
@@ -310,7 +310,7 @@ export const WaktuSolatTab: React.FC = () => {
                         setZoneDropdownOpen(false);
                         setZoneSearchQuery("");
                       }}
-                      className={`w-full text-left px-3 py-2 text-xs rounded-xl transition-colors cursor-pointer flex flex-col gap-0.5 ${
+                      className={`w-full text-left px-3 py-2.5 text-xs rounded-2xl transition-colors cursor-pointer flex flex-col gap-0.5 ${
                         selectedZone === z.jakimCode
                           ? "neu-pressed text-emerald-600 dark:text-emerald-400 font-bold"
                           : "hover:bg-black/5 dark:hover:bg-white/5 opacity-80"
@@ -335,12 +335,12 @@ export const WaktuSolatTab: React.FC = () => {
 
       {/* Prayer Times & Compass Structured Grid (2 columns, 5 rows) */}
       {loadingTimes ? (
-        <div className="p-6 rounded-2xl neu-pressed text-center text-xs opacity-75">
+        <div className="p-6 rounded-3xl neu-pressed text-center text-xs opacity-75">
           Memuatkan waktu solat...
         </div>
       ) : todayPrayer ? (
-        <div className="p-4 rounded-2xl neu-flat space-y-3">
-          <div className="flex items-center justify-between border-b border-black/5 dark:border-white/5 pb-2">
+        <div className="p-4 rounded-3xl neu-pressed space-y-3">
+          <div className="flex items-center justify-between pb-2">
             <div>
               <h3 className="text-xs font-bold text-emerald-600 dark:text-emerald-400">Jadual Waktu Solat</h3>
               <p className="text-xs opacity-75">{formatFullDate(todayPrayer.date)}</p>
@@ -354,12 +354,17 @@ export const WaktuSolatTab: React.FC = () => {
                 const item = slotsMap[name];
                 if (!item) return null;
                 const isCurrentActive = allSlotsArray.findIndex((s) => s.name === item.name) === activeIndex;
-                const diff = item.timeInMinutes - currentTimeMinutes;
+                
+                let diff = item.timeInMinutes - currentTimeMinutes;
+                if (diff < 0) diff += 1440; // Add 24 hours (1440 mins) if time has passed today so it counts down for tomorrow
+                
+                const hoursLeft = Math.floor(diff / 60);
+                const minsLeft = diff % 60;
 
                 return (
                   <div 
                     key={name} 
-                    className={`h-16 rounded-xl flex flex-col items-center justify-center text-center space-y-0.5 transition-all ${
+                    className={`h-16 rounded-2xl flex flex-col items-center justify-center text-center space-y-0.5 transition-all ${
                       isCurrentActive ? "neu-pressed text-emerald-600 dark:text-emerald-400 shadow-inner scale-[0.98]" : "neu-flat opacity-85"
                     }`}
                   >
@@ -367,7 +372,7 @@ export const WaktuSolatTab: React.FC = () => {
                     <span className="text-sm font-bold">{item.timeStr}</span>
                     {isCurrentActive && (
                       <span className="text-[10px] opacity-75 font-medium leading-tight">
-                        {diff <= 0 ? "Berlangsung" : `${Math.floor(diff / 60) > 0 ? `${Math.floor(diff / 60)}j ` : ""}${diff % 60}m lagi`}
+                        {hoursLeft > 0 ? `${hoursLeft} jam ` : ""}{minsLeft} minit lagi
                       </span>
                     )}
                   </div>
@@ -381,12 +386,17 @@ export const WaktuSolatTab: React.FC = () => {
                 const item = slotsMap[name];
                 if (!item) return null;
                 const isCurrentActive = allSlotsArray.findIndex((s) => s.name === item.name) === activeIndex;
-                const diff = item.timeInMinutes - currentTimeMinutes;
+                
+                let diff = item.timeInMinutes - currentTimeMinutes;
+                if (diff < 0) diff += 1440;
+                
+                const hoursLeft = Math.floor(diff / 60);
+                const minsLeft = diff % 60;
 
                 return (
                   <div 
                     key={name} 
-                    className={`h-16 rounded-xl flex flex-col items-center justify-center text-center space-y-0.5 transition-all ${
+                    className={`h-16 rounded-2xl flex flex-col items-center justify-center text-center space-y-0.5 transition-all ${
                       isCurrentActive ? "neu-pressed text-emerald-600 dark:text-emerald-400 shadow-inner scale-[0.98]" : "neu-flat opacity-85"
                     }`}
                   >
@@ -394,7 +404,7 @@ export const WaktuSolatTab: React.FC = () => {
                     <span className="text-sm font-bold">{item.timeStr}</span>
                     {isCurrentActive && (
                       <span className="text-[10px] opacity-75 font-medium leading-tight">
-                        {diff <= 0 ? "Berlangsung" : `${Math.floor(diff / 60) > 0 ? `${Math.floor(diff / 60)}j ` : ""}${diff % 60}m lagi`}
+                        {hoursLeft > 0 ? `${hoursLeft} jam ` : ""}{minsLeft} minit lagi
                       </span>
                     )}
                   </div>
@@ -402,7 +412,7 @@ export const WaktuSolatTab: React.FC = () => {
               })}
 
               {/* Merged Qibla Compass Card spanning the remaining 3 rows height */}
-              <div className="flex-1 min-h-[162px] rounded-xl neu-flat flex flex-col items-center justify-center text-center p-3 space-y-2">
+              <div className="flex-1 min-h-[162px] rounded-2xl neu-flat flex flex-col items-center justify-center text-center p-3 space-y-2">
                 <span className="text-xs font-bold text-emerald-600 dark:text-emerald-400">Arah Kiblat</span>
                 <div className="relative w-12 h-12 rounded-full neu-pressed flex items-center justify-center shadow-inner">
                   <div 
@@ -415,7 +425,7 @@ export const WaktuSolatTab: React.FC = () => {
                 </div>
                 <button
                   onClick={calculateQibla}
-                  className="w-full py-1.5 px-2 rounded-lg neu-flat text-xs font-bold text-emerald-600 dark:text-emerald-400 hover:opacity-80 transition-opacity cursor-pointer truncate"
+                  className="w-full py-1.5 px-2 rounded-xl neu-flat text-xs font-bold text-emerald-600 dark:text-emerald-400 hover:opacity-80 transition-opacity cursor-pointer truncate"
                   title={locationStatus}
                 >
                   {qiblaHeading !== null ? `${qiblaHeading}°` : "Kira GPS"}
@@ -425,14 +435,14 @@ export const WaktuSolatTab: React.FC = () => {
           </div>
 
           {/* Attribution Note */}
-          <div className="pt-1.5 border-t border-black/5 dark:border-white/5 text-center">
+          <div className="pt-1 text-center">
             <p className="text-xs opacity-65 leading-relaxed">
               Sumber data rasmi diperolehi terus daripada portal e-Solat Jabatan Kemajuan Islam Malaysia (JAKIM).
             </p>
           </div>
         </div>
       ) : (
-        <div className="p-4 rounded-2xl neu-pressed text-center text-xs opacity-75">
+        <div className="p-4 rounded-3xl neu-pressed text-center text-xs opacity-75">
           Tiada data waktu solat dijumpai untuk zon ini.
         </div>
       )}
