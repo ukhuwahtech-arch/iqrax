@@ -261,7 +261,7 @@ export const SearchBox: React.FC<SearchBoxProps> = ({
                 {surahDropdownOpen && (
                   <div 
                     onClick={(e) => e.stopPropagation()}
-                    className="absolute left-0 sm:left-auto mt-2 w-full sm:w-72 rounded-2xl neu-flat p-3 z-50 shadow-2xl bg-white dark:bg-[#1e1e24] space-y-2 transition-all duration-300 ease-out transform origin-top font-poppins font-normal text-[14px]"
+                    className="fixed inset-x-4 top-24 sm:absolute sm:inset-x-auto sm:top-auto sm:left-0 sm:mt-2 sm:w-72 max-h-[70vh] sm:max-h-none rounded-2xl neu-flat p-4 sm:p-3 z-[999] shadow-2xl bg-white dark:bg-[#1e1e24] space-y-2 font-poppins font-normal text-[14px]"
                   >
                     <div className="relative w-full">
                       <input
@@ -270,7 +270,7 @@ export const SearchBox: React.FC<SearchBoxProps> = ({
                         value={surahSearchQuery}
                         onChange={(e) => setSurahSearchQuery(e.target.value)}
                         autoFocus
-                        className="w-full px-3 py-2 pr-8 rounded-xl neu-pressed font-normal bg-transparent outline-none text-[16px] sm:text-[14px]"
+                        className="w-full px-3 py-2.5 pr-8 rounded-xl neu-pressed font-normal bg-transparent outline-none text-[16px] sm:text-[14px]"
                       />
                       {surahSearchQuery && (
                         <button
@@ -282,7 +282,7 @@ export const SearchBox: React.FC<SearchBoxProps> = ({
                         </button>
                       )}
                     </div>
-                    <div className="max-h-52 overflow-y-auto space-y-1 pr-1 font-normal">
+                    <div className="max-h-60 sm:max-h-52 overflow-y-auto space-y-1 pr-1 font-normal">
                       <button
                         type="button"
                         onClick={() => {
@@ -291,7 +291,7 @@ export const SearchBox: React.FC<SearchBoxProps> = ({
                           setSurahDropdownOpen(false);
                           onSelectSurahAndVerse("all", "all");
                         }}
-                        className={`w-full flex items-center justify-start px-3 py-2 font-normal rounded-xl transition-colors cursor-pointer ${
+                        className={`w-full flex items-center justify-start px-3 py-2.5 sm:py-2 font-normal rounded-xl transition-colors cursor-pointer ${
                           selectedSurahId === "all" ? "neu-pressed text-emerald-600 dark:text-emerald-400" : "hover:bg-black/5 opacity-80"
                         }`}
                       >
@@ -308,7 +308,7 @@ export const SearchBox: React.FC<SearchBoxProps> = ({
                             setSurahDropdownOpen(false);
                             onSelectSurahAndVerse(ch.id, "all");
                           }}
-                          className={`w-full flex items-center justify-start px-3 py-2 font-normal rounded-xl transition-colors cursor-pointer ${
+                          className={`w-full flex items-center justify-start px-3 py-2.5 sm:py-2 font-normal rounded-xl transition-colors cursor-pointer ${
                             selectedSurahId === ch.id ? "neu-pressed text-emerald-600 dark:text-emerald-400" : "hover:bg-black/5 opacity-80"
                           }`}
                         >
@@ -343,7 +343,7 @@ export const SearchBox: React.FC<SearchBoxProps> = ({
                 {verseDropdownOpen && (
                   <div 
                     onClick={(e) => e.stopPropagation()}
-                    className="absolute right-0 sm:left-auto mt-2 w-full sm:w-56 rounded-2xl neu-flat p-3 z-50 shadow-2xl bg-white dark:bg-[#1e1e24] space-y-2 transition-all duration-300 ease-out transform origin-top font-poppins font-normal text-[14px]"
+                    className="fixed inset-x-4 top-24 sm:absolute sm:inset-x-auto sm:top-auto sm:left-0 sm:mt-2 sm:w-56 max-h-[70vh] sm:max-h-none rounded-2xl neu-flat p-4 sm:p-3 z-[999] shadow-2xl bg-white dark:bg-[#1e1e24] space-y-2 font-poppins font-normal text-[14px]"
                   >
                     <div className="relative w-full">
                       <input
@@ -352,7 +352,7 @@ export const SearchBox: React.FC<SearchBoxProps> = ({
                         value={verseSearchQuery}
                         onChange={(e) => setVerseSearchQuery(e.target.value)}
                         autoFocus
-                        className="w-full px-3 py-2 pr-8 rounded-xl neu-pressed font-normal bg-transparent outline-none text-[16px] sm:text-[14px]"
+                        className="w-full px-3 py-2.5 pr-8 rounded-xl neu-pressed font-normal bg-transparent outline-none text-[16px] sm:text-[14px]"
                       />
                       {verseSearchQuery && (
                         <button
@@ -364,7 +364,7 @@ export const SearchBox: React.FC<SearchBoxProps> = ({
                         </button>
                       )}
                     </div>
-                    <div className="max-h-52 overflow-y-auto space-y-1 pr-1 font-normal">
+                    <div className="max-h-60 sm:max-h-52 overflow-y-auto space-y-1 pr-1 font-normal">
                       <button
                         type="button"
                         onClick={() => {
@@ -372,7 +372,7 @@ export const SearchBox: React.FC<SearchBoxProps> = ({
                           setVerseDropdownOpen(false);
                           onSelectSurahAndVerse(selectedSurahId, "all");
                         }}
-                        className="w-full text-left px-3 py-2 font-normal rounded-xl hover:bg-black/5 opacity-80"
+                        className="w-full text-left px-3 py-2.5 sm:py-2 font-normal rounded-xl hover:bg-black/5 opacity-80"
                       >
                         Semua Ayat
                       </button>
@@ -387,7 +387,7 @@ export const SearchBox: React.FC<SearchBoxProps> = ({
                             setVerseDropdownOpen(false);
                             onSelectSurahAndVerse(selectedSurahId, vKey);
                           }}
-                          className={`w-full text-left px-3 py-2 font-normal rounded-xl transition-colors cursor-pointer ${
+                          className={`w-full text-left px-3 py-2.5 sm:py-2 font-normal rounded-xl transition-colors cursor-pointer ${
                             selectedVerseKey.endsWith(`:${vNum}`) ? "neu-pressed text-emerald-600 dark:text-emerald-400" : "hover:bg-black/5 opacity-80"
                           }`}
                         >
